@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["react", "next", "import", "typescript"],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "warn",
+		"pedantic": "off",
+		"style": "warn",
+		"nursery": "off",
+		"restriction": "off"
+	},
+	"rules": {
+		"suspicious/no_unknown_at_rule": "off",
+		"react/react-in-jsx-scope": "off",
+		"react/jsx-uses-react": "off"
+	},
+	"settings": {
+		"react": {
+			"version": "19.2.4"
+		}
+	},
+	"ignorePatterns": ["node_modules/**", ".next/**", "dist/**", "build/**"]
+}
