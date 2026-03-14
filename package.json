@@ -9,7 +9,8 @@
 		"start": "vite preview",
 		"lint": "oxlint --config .oxlintrc.json",
 		"format:check": "oxfmt --check src",
-		"format": "oxfmt --write src"
+		"format": "oxfmt --write src",
+		"type-check": "tsc --noEmit --project tsconfig.json"
 	},
 	"dependencies": {
 		"cloesce": "^0.0.5-unstable.27",
