@@ -3,6 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
+		"cloesce:compile": "cloesce compile",
 		"dev": "vite dev --port 3000",
 		"build": "vite build",
 		"start": "vite preview",
@@ -11,10 +12,13 @@
 		"format": "oxfmt --write src"
 	},
 	"dependencies": {
+		"cloesce": "^0.0.5-unstable.27",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4"
 	},
 	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.13.6",
+		"@cloudflare/workers-types": "^4.20260130.0",
 		"@tailwindcss/postcss": "^4",
 		"@types/node": "^20",
 		"@types/react": "^19",

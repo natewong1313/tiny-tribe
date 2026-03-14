@@ -1,0 +1,10 @@
+compatibility_date = "2026-03-12"
+compatibility_flags = ["nodejs_compat"]
+main = "vinext/server/app-router-entry"
+name = "tiny-tribe"
+
+[[d1_databases]]
+binding = "db"
+database_id = "replace_with_db_id"
+database_name = "replace_with_db_name"
+migrations_dir = "migrations/db"
