@@ -1,13 +1,9 @@
-import { createAuth } from "@/lib/auth";
-import { env } from "cloudflare:workers";
+import { getAuth } from "@/lib/auth-server";
 
-const auth = createAuth({
-  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-  BETTER_AUTH_URL: env.BETTER_AUTH_URL,
-  db: env.db,
-});
-
-const handler = async (request: Request): Promise<Response> => auth.handler(request);
+const handler = async (request: Request): Promise<Response> => {
+  const auth = getAuth();
+  return auth.handler(request);
+};
 
 export const GET = handler;
 export const POST = handler;

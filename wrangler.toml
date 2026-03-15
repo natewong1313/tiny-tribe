@@ -1,5 +1,8 @@
 compatibility_date = "2025-10-02"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = [
+    "nodejs_compat",
+    "no_handle_cross_request_promise_resolution",
+]
 main = "vinext/server/app-router-entry"
 name = "cloesce"
 
