@@ -1,9 +1,10 @@
 import { execFileSync } from "node:child_process";
-import type { Plugin, ViteDevServer } from "vite";
+import type { ViteDevServer } from "vite";
+import type { Plugin } from "vite";
 
 const BUILD_COMPILE_GUARD = Symbol.for("cloesce.build.compile.guard");
 
-function getBuildGuard(): Set<string> {
+const getBuildGuard = (): Set<string> => {
   const scope = globalThis as typeof globalThis & {
     [BUILD_COMPILE_GUARD]?: Set<string>;
   };
@@ -11,18 +12,18 @@ function getBuildGuard(): Set<string> {
     scope[BUILD_COMPILE_GUARD] = new Set<string>();
   }
   return scope[BUILD_COMPILE_GUARD];
-}
+};
 
-function runCompile(root: string) {
-  const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+const runCompile = (root: string) => {
+  const npx = "win32" === process.platform ? "npx.cmd" : "npx";
   execFileSync(npx, ["cloesce", "compile"], {
     cwd: root,
-    stdio: "inherit",
     env: process.env,
+    stdio: "inherit",
   });
-}
+};
 
-export function cloescePlugin(): Plugin {
+export const cloescePlugin = (): Plugin => {
   let root = process.cwd();
   let command: "build" | "serve" = "serve";
   let running = false;
@@ -65,7 +66,9 @@ export function cloescePlugin(): Plugin {
     ]);
 
     const recompile = (filePath: string) => {
-      if (!isCloesceSourceFile(filePath)) return;
+      if (!isCloesceSourceFile(filePath)) {
+        return;
+      }
       compile(
         (error) => {
           server.config.logger.error(`[cloesce] compile failed: ${String(error)}`);
@@ -81,16 +84,14 @@ export function cloescePlugin(): Plugin {
   };
 
   return {
-    name: "cloesce-compile",
-    enforce: "pre",
-    configResolved(config) {
-      root = config.root;
-      command = config.command;
-    },
     buildStart() {
-      if (command !== "build") return;
+      if ("build" !== command) {
+        return;
+      }
       const guard = getBuildGuard();
-      if (guard.has(root)) return;
+      if (guard.has(root)) {
+        return;
+      }
 
       compile((error) => {
         this.error(`[cloesce] compile failed: ${String(error)}`);
@@ -98,11 +99,17 @@ export function cloescePlugin(): Plugin {
         guard.add(root);
       });
     },
+    configResolved(config) {
+      root = config.root;
+      command = config.command;
+    },
     configureServer(server) {
       compile((error) => {
         server.config.logger.error(`[cloesce] compile failed: ${String(error)}`);
       });
       setupWatcher(server);
     },
+    enforce: "pre",
+    name: "cloesce-compile",
   };
-}
+};

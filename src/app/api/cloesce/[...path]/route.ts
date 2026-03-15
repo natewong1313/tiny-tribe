@@ -1,33 +1,9 @@
 import { env } from "cloudflare:workers";
-import { CloesceApp } from "cloesce/backend";
-import cidl from "../../../../../.generated/cidl.json";
-import {
-  BetterAuthAccount,
-  BetterAuthSession,
-  BetterAuthUser,
-  BetterAuthVerification,
-  Env as CloesceEnv,
-} from "@/data/models.cloesce";
-
-const constructorRegistry: Record<string, new () => any> = {
-  BetterAuthUser,
-  BetterAuthSession,
-  BetterAuthAccount,
-  BetterAuthVerification,
-  Env: CloesceEnv,
-};
-
-let appPromise: Promise<CloesceApp> | null = null;
+import type { CloesceApp } from "cloesce/backend";
+import { getCloesceApp } from "@/lib/cloesce-runtime";
 
 async function getApp(): Promise<CloesceApp> {
-  if (!appPromise) {
-    appPromise = CloesceApp.init(cidl as any, constructorRegistry).then((app) => {
-      app.routePrefix = "api/cloesce";
-      return app;
-    });
-  }
-
-  return appPromise;
+  return getCloesceApp();
 }
 
 async function handler(request: Request): Promise<Response> {

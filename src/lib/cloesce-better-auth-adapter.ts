@@ -17,7 +17,11 @@ function quoteIdentifier(identifier: string): string {
   return `"${identifier}"`;
 }
 
-function applyWhere(where?: CleanedWhere[]): {
+function applyWhere(
+  where: CleanedWhere[] | undefined,
+  getFieldName: (opts: { model: string; field: string }) => string,
+  model: string,
+): {
   sql: string;
   params: unknown[];
 } {
@@ -30,7 +34,7 @@ function applyWhere(where?: CleanedWhere[]): {
 
   where.forEach((clause, index) => {
     const connector = index === 0 ? "" : ` ${clause.connector} `;
-    const field = quoteIdentifier(clause.field);
+    const field = quoteIdentifier(getFieldName({ model, field: clause.field }));
 
     switch (clause.operator) {
       case "eq": {
@@ -108,6 +112,13 @@ function applyWhere(where?: CleanedWhere[]): {
   };
 }
 
+function normalizeValue(value: unknown): unknown {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return value;
+}
+
 function bindParams<T extends { bind: (...values: unknown[]) => T }>(
   statement: T,
   params: unknown[],
@@ -115,7 +126,8 @@ function bindParams<T extends { bind: (...values: unknown[]) => T }>(
   if (params.length === 0) {
     return statement;
   }
-  return statement.bind(...params);
+  const normalizedParams = params.map(normalizeValue);
+  return statement.bind(...normalizedParams);
 }
 
 export const cloesceBetterAuthAdapter = (
@@ -129,7 +141,7 @@ export const cloesceBetterAuthAdapter = (
       usePlural: false,
       debugLogs: config.debugLogs ?? false,
       supportsJSON: false,
-      supportsDates: true,
+      supportsDates: false,
       supportsBooleans: false,
       supportsArrays: false,
       transaction: false,
@@ -150,7 +162,7 @@ export const cloesceBetterAuthAdapter = (
 
           const sql =
             keys.length > 0
-              ? `INSERT INTO ${table} (${keys.map(quoteIdentifier).join(", ")}) VALUES (${keys
+              ? `INSERT INTO ${table} (${keys.map((key) => quoteIdentifier(getFieldName({ model, field: key }))).join(", ")}) VALUES (${keys
                   .map(() => "?")
                   .join(", ")}) RETURNING *`
               : `INSERT INTO ${table} DEFAULT VALUES RETURNING *`;
@@ -173,7 +185,7 @@ export const cloesceBetterAuthAdapter = (
           select?: string[];
         }) => {
           const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           const columns =
             select && select.length > 0 ? select.map(quoteIdentifier).join(", ") : "*";
 
@@ -197,7 +209,7 @@ export const cloesceBetterAuthAdapter = (
           offset?: number;
         }) => {
           const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           const columns =
             select && select.length > 0 ? select.map(quoteIdentifier).join(", ") : "*";
 
@@ -237,8 +249,8 @@ export const cloesceBetterAuthAdapter = (
             return null;
           }
 
-          const setSql = keys.map((key) => `${quoteIdentifier(key)} = ?`).join(", ");
-          const { sql: whereSql, params: whereParams } = applyWhere(where);
+          const setSql = keys.map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`).join(", ");
+          const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
           const params = [
             ...keys.map((key) => updateRecord[key]),
             ...whereParams,
@@ -264,8 +276,8 @@ export const cloesceBetterAuthAdapter = (
             return 0;
           }
 
-          const setSql = keys.map((key) => `${quoteIdentifier(key)} = ?`).join(", ");
-          const { sql: whereSql, params: whereParams } = applyWhere(where);
+          const setSql = keys.map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`).join(", ");
+          const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
           const params = [
             ...keys.map((key) => updateRecord[key]),
             ...whereParams,
@@ -284,7 +296,7 @@ export const cloesceBetterAuthAdapter = (
           where: CleanedWhere[];
         }) => {
           const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           await bindParams(db.prepare(`DELETE FROM ${table}${whereSql}`), params).run();
         },
 
@@ -296,7 +308,7 @@ export const cloesceBetterAuthAdapter = (
           where: CleanedWhere[];
         }) => {
           const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           const result = await bindParams(db.prepare(`DELETE FROM ${table}${whereSql}`), params).run();
           return result.meta.changes ?? 0;
         },
@@ -309,7 +321,7 @@ export const cloesceBetterAuthAdapter = (
           where?: CleanedWhere[];
         }) => {
           const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           const query = `SELECT COUNT(*) as total FROM ${table}${whereSql}`;
           const result = await bindParams(db.prepare(query), params).first<{ total: number | string }>();
           return Number(result?.total ?? 0);

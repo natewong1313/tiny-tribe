@@ -6,7 +6,7 @@
       "name": "tiny-tribe",
       "dependencies": {
         "better-auth": "^1.5.5",
-        "cloesce": "^0.0.5-unstable.27",
+        "cloesce": "^0.2.2",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
       },
@@ -547,9 +547,9 @@
 
     "client-only": ["client-only@0.0.1", "", {}, "sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA=="],
 
-    "cloesce": ["cloesce@0.0.5-unstable.27", "", { "dependencies": { "cmd-ts": "^0.14.1", "ts-morph": "^22.0.0", "wrangler": "^4.34.0" }, "bin": { "cloesce": "dist/cli.js" } }, "sha512-hbJ9Ut5dKjbu3REvVOPl11dxgwU7z4FFxDAdOG4H4qqG4oj2h4OVwAmE7LL9ca13FybUV7tPnhfDgPA1BSJykg=="],
+    "cloesce": ["cloesce@0.2.2", "", { "dependencies": { "cmd-ts": "^0.15.0", "jiti": "^2.6.1", "ts-morph": "^22.0.0" }, "bin": { "cloesce": "dist/cli.js" } }, "sha512-eSkJdHJNsi1PaMaxIsPskUV3kGRuSWHm2L9yGBHHC7yU8w2/r3E1YA/c5SWhlfALNjTCjUmPl8zy0ZKGXnBa/Q=="],
 
-    "cmd-ts": ["cmd-ts@0.14.3", "", { "dependencies": { "chalk": "^5.4.1", "debug": "^4.4.1", "didyoumean": "^1.2.2", "strip-ansi": "^7.1.0" } }, "sha512-i9miaLBHGPn4T4vUFUdAdWoQ9HI8ato6usFrhubO21o/MQGqI6Nsqyd4ncZusT2chvPetNMmTt0JWkbaAOdWPg=="],
+    "cmd-ts": ["cmd-ts@0.15.0", "", { "dependencies": { "chalk": "^5.4.1", "debug": "^4.4.1", "didyoumean": "^1.2.2", "strip-ansi": "^7.1.0" } }, "sha512-ASyAx+P6DNzNEZ6OYmvjjaLAQeI3L+4lm5rX2Jg8tondXdj06o9JTxi9mfC92KoVbrVFKhZ+j2TfBF8fcura6g=="],
 
     "code-block-writer": ["code-block-writer@13.0.3", "", {}, "sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg=="],
 

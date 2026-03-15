@@ -1,14 +1,16 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
-import vinext from "vinext";
-import { defineConfig } from "vite";
 import { cloescePlugin } from "./plugins/vite-plugin-cloesce";
+import { defineConfig } from "vite";
+import vinext from "vinext";
 
-export default defineConfig({
+const config = defineConfig({
   plugins: [
     cloescePlugin(),
     vinext(),
     cloudflare({
-      viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+      viteEnvironment: { childEnvironments: ["ssr"], name: "rsc" },
     }),
   ],
 });
+
+export default config;

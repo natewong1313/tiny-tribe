@@ -1,5 +1,5 @@
-import { Model, WranglerEnv } from "cloesce/backend";
-import { D1Database, R2Bucket } from "@cloudflare/workers-types";
+import { Crud, Model, R2, WranglerEnv } from "cloesce/backend";
+import { D1Database, R2Bucket, R2ObjectBody } from "@cloudflare/workers-types";
 
 @WranglerEnv
 export class Env {
@@ -7,8 +7,20 @@ export class Env {
   bucket!: R2Bucket;
 }
 
-@Model()
+@Model("db")
 export class BetterAuthUser {
+  id!: string;
+  name!: string;
+  email!: string;
+  email_verified!: boolean;
+  image!: string | null;
+  created_at!: Date;
+  updated_at!: Date;
+}
+
+@Model("db")
+@Crud("SAVE", "GET", "LIST")
+export class User {
   id!: string;
   name!: string;
   email!: string;
@@ -17,9 +29,12 @@ export class BetterAuthUser {
   username!: string;
   created_at!: Date;
   updated_at!: Date;
+
+  @R2("user/photos/{id}.png", "bucket")
+  photo!: R2ObjectBody;
 }
 
-@Model()
+@Model("db")
 export class BetterAuthSession {
   id!: string;
   expires_at!: Date;
@@ -31,7 +46,7 @@ export class BetterAuthSession {
   user_id!: string;
 }
 
-@Model()
+@Model("db")
 export class BetterAuthAccount {
   id!: string;
   account_id!: string;
@@ -48,7 +63,7 @@ export class BetterAuthAccount {
   updated_at!: Date;
 }
 
-@Model()
+@Model("db")
 export class BetterAuthVerification {
   id!: string;
   identifier!: string;

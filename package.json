@@ -3,9 +3,9 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"cloesce:compile": "cloesce compile",
-    "migrate:cloesce": "cloesce migrate",
-    "migrate:wrangler": "wrangler d1 migrations apply db",
+		"compile": "cloesce compile",
+		"migrate:cloesce": "cloesce migrate",
+		"migrate:wrangler": "wrangler d1 migrations apply tiny-tribe-db --local",
 		"dev": "vite dev --port 3000",
 		"build": "vite build",
 		"start": "vite preview",
@@ -16,7 +16,7 @@
 	},
 	"dependencies": {
 		"better-auth": "^1.5.5",
-		"cloesce": "^0.0.5-unstable.27",
+		"cloesce": "^0.2.2",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4"
 	},

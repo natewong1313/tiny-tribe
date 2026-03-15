@@ -1,77 +1,71 @@
 import { betterAuth } from "better-auth";
-import { D1Database } from "@cloudflare/workers-types";
 import { cloesceBetterAuthAdapter } from "@/lib/cloesce-better-auth-adapter";
+import { D1Database } from "@cloudflare/workers-types";
 
 interface Env {
-  db: D1Database;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  db: D1Database;
 }
 
-export function createAuth(env: Env) {
-  return betterAuth({
-    database: cloesceBetterAuthAdapter(env.db),
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-    user: {
-      modelName: "BetterAuthUser",
-      fields: {
-        emailVerified: "email_verified",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
-      additionalFields: {
-        username: {
-          type: "string",
-          required: true,
-        },
-      },
+export const createAuth = (env: Env) => betterAuth({
+  account: {
+    fields: {
+      accessToken: "access_token",
+      accessTokenExpiresAt: "access_token_expires_at",
+      accountId: "account_id",
+      createdAt: "created_at",
+      idToken: "id_token",
+      providerId: "provider_id",
+      refreshToken: "refresh_token",
+      refreshTokenExpiresAt: "refresh_token_expires_at",
+      updatedAt: "updated_at",
+      userId: "user_id",
     },
-    session: {
-      modelName: "BetterAuthSession",
-      fields: {
-        userId: "user_id",
-        expiresAt: "expires_at",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
+    modelName: "BetterAuthAccount",
+  },
+  baseURL: env.BETTER_AUTH_URL,
+  database: cloesceBetterAuthAdapter(env.db),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      // Mock email for development - log to console
+      console.log("Password reset email:");
+      console.log(`To: ${user.email}`);
+      console.log(`Reset URL: ${url}`);
     },
-    account: {
-      modelName: "BetterAuthAccount",
-      fields: {
-        userId: "user_id",
-        accountId: "account_id",
-        providerId: "provider_id",
-        accessToken: "access_token",
-        refreshToken: "refresh_token",
-        idToken: "id_token",
-        accessTokenExpiresAt: "access_token_expires_at",
-        refreshTokenExpiresAt: "refresh_token_expires_at",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
+  },
+  secret: env.BETTER_AUTH_SECRET,
+  session: {
+    fields: {
+      createdAt: "created_at",
+      expiresAt: "expires_at",
+      ipAddress: "ip_address",
+      updatedAt: "updated_at",
+      userAgent: "user_agent",
+      userId: "user_id",
     },
-    verification: {
-      modelName: "BetterAuthVerification",
-      fields: {
-        expiresAt: "expires_at",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
+    modelName: "BetterAuthSession",
+  },
+  trustedOrigins: ["http://localhost:3000", env.BETTER_AUTH_URL],
+  user: {
+    fields: {
+      createdAt: "created_at",
+      emailVerified: "email_verified",
+      updatedAt: "updated_at",
     },
-    emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: false,
-      sendResetPassword: async ({ user, url }) => {
-        // Mock email for development - log to console
-        console.log("Password reset email:");
-        console.log(`To: ${user.email}`);
-        console.log(`Reset URL: ${url}`);
-      },
+    modelName: "BetterAuthUser",
+  },
+  verification: {
+    fields: {
+      createdAt: "created_at",
+      expiresAt: "expires_at",
+      updatedAt: "updated_at",
     },
-    trustedOrigins: ["http://localhost:3000", env.BETTER_AUTH_URL],
-  });
-}
+    modelName: "BetterAuthVerification",
+  },
+});
 
 export type Auth = ReturnType<typeof createAuth>;
 export type Session = Awaited<ReturnType<Auth["api"]["getSession"]>>;
