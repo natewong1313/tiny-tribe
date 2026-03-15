@@ -1,20 +1,20 @@
 import { env } from "cloudflare:workers";
 import { CloesceApp } from "cloesce/backend";
 import cidl from "../../../../../.generated/cidl.json";
-
-class User {
-  id!: number;
-  username!: string;
-  email!: string;
-}
-
-class Env {
-  db!: unknown;
-}
+import {
+  BetterAuthAccount,
+  BetterAuthSession,
+  BetterAuthUser,
+  BetterAuthVerification,
+  Env as CloesceEnv,
+} from "@/data/models.cloesce";
 
 const constructorRegistry: Record<string, new () => any> = {
-  User,
-  Env,
+  BetterAuthUser,
+  BetterAuthSession,
+  BetterAuthAccount,
+  BetterAuthVerification,
+  Env: CloesceEnv,
 };
 
 let appPromise: Promise<CloesceApp> | null = null;

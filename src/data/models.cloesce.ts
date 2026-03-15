@@ -1,10 +1,5 @@
-import { Inject, Integer, Model, PUT, R2, WranglerEnv } from "cloesce/backend";
-import {
-  D1Database,
-  R2Bucket,
-  R2ObjectBody,
-  ReadableStream,
-} from "@cloudflare/workers-types";
+import { Model, WranglerEnv } from "cloesce/backend";
+import { D1Database, R2Bucket } from "@cloudflare/workers-types";
 
 @WranglerEnv
 export class Env {
@@ -12,17 +7,53 @@ export class Env {
   bucket!: R2Bucket;
 }
 
-@Model(["SAVE", "GET", "LIST"])
-export class User {
-  id!: Integer;
-  username!: string;
+@Model()
+export class BetterAuthUser {
+  id!: string;
+  name!: string;
   email!: string;
+  email_verified!: boolean;
+  image!: string | null;
+  username!: string;
+  created_at!: Date;
+  updated_at!: Date;
+}
 
-  @R2("user/avatars/{id}.png", "bucket")
-  avatar!: R2ObjectBody;
+@Model()
+export class BetterAuthSession {
+  id!: string;
+  expires_at!: Date;
+  token!: string;
+  created_at!: Date;
+  updated_at!: Date;
+  ip_address!: string | null;
+  user_agent!: string | null;
+  user_id!: string;
+}
 
-  @PUT
-  async uploadAvatar(@Inject env: Env, stream: ReadableStream) {
-    await env.bucket.put(`user/avatars/${this.id}.png`, stream);
-  }
+@Model()
+export class BetterAuthAccount {
+  id!: string;
+  account_id!: string;
+  provider_id!: string;
+  user_id!: string;
+  access_token!: string | null;
+  refresh_token!: string | null;
+  id_token!: string | null;
+  access_token_expires_at!: Date | null;
+  refresh_token_expires_at!: Date | null;
+  scope!: string | null;
+  password!: string | null;
+  created_at!: Date;
+  updated_at!: Date;
+}
+
+@Model()
+export class BetterAuthVerification {
+  id!: string;
+  identifier!: string;
+  value!: string;
+  expires_at!: Date;
+  created_at!: Date;
+  updated_at!: Date;
 }

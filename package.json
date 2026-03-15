@@ -4,6 +4,8 @@
 	"private": true,
 	"scripts": {
 		"cloesce:compile": "cloesce compile",
+    "migrate:cloesce": "cloesce migrate",
+    "migrate:wrangler": "wrangler d1 migrations apply db",
 		"dev": "vite dev --port 3000",
 		"build": "vite build",
 		"start": "vite preview",
@@ -13,6 +15,7 @@
 		"type-check": "tsc --noEmit --project tsconfig.json"
 	},
 	"dependencies": {
+		"better-auth": "^1.5.5",
 		"cloesce": "^0.0.5-unstable.27",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4"
@@ -20,6 +23,7 @@
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "^1.13.6",
 		"@cloudflare/workers-types": "^4.20260130.0",
+		"@remixicon/react": "^4.9.0",
 		"@tailwindcss/postcss": "^4",
 		"@types/node": "^20",
 		"@types/react": "^19",

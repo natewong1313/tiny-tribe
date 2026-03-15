@@ -1,7 +1,7 @@
-compatibility_date = "2026-03-12"
+compatibility_date = "2025-10-02"
 compatibility_flags = ["nodejs_compat"]
 main = "vinext/server/app-router-entry"
-name = "tiny-tribe"
+name = "cloesce"
 
 [[d1_databases]]
 binding = "db"
@@ -11,4 +11,4 @@ migrations_dir = "migrations/db"
 
 [[r2_buckets]]
 binding = "bucket"
-bucket_name = "replace-with-bucket-name"
+bucket_name = "replace-with-r2-bucket-name"
