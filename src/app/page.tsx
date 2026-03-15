@@ -45,13 +45,12 @@ const Post = () => {
       />
       <div className="pt-4">
         <p className="line-clamp-3">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
-          minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-          aliquip ex ea commodo consequat. Duis aute irure dolor in
-          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-          pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-          culpa qui officia deserunt mollit anim id est laborum.
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
+          ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+          ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
+          sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
+          est laborum.
         </p>
         <p className="text-stone-600">30 minutes ago</p>
       </div>
@@ -65,10 +64,7 @@ const LandingPage = () => {
       <img src="/logo.svg" className="h-12 w-12 rounded-md mb-8" />
       <h1 className="font-semibold text-lg">Welcome to Tiny Tribe</h1>
       <p className="text-tt-green-600">Tiny Tribe is a minmal social network</p>
-      <Link
-        className="mt-4 bg-tt-green-600 text-stone-50 rounded-md px-4 py-2"
-        href="/sign-in"
-      >
+      <Link className="mt-4 bg-tt-green-600 text-stone-50 rounded-md px-4 py-2" href="/sign-in">
         Sign up
       </Link>
     </div>

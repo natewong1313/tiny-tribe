@@ -130,10 +130,7 @@ function bindParams<T extends { bind: (...values: unknown[]) => T }>(
   return statement.bind(...normalizedParams);
 }
 
-export const cloesceBetterAuthAdapter = (
-  db: D1Database,
-  config: CloesceD1AdapterConfig = {},
-) =>
+export const cloesceBetterAuthAdapter = (db: D1Database, config: CloesceD1AdapterConfig = {}) =>
   createAdapterFactory({
     config: {
       adapterId: "cloesce-d1",
@@ -249,12 +246,11 @@ export const cloesceBetterAuthAdapter = (
             return null;
           }
 
-          const setSql = keys.map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`).join(", ");
+          const setSql = keys
+            .map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`)
+            .join(", ");
           const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
-          const params = [
-            ...keys.map((key) => updateRecord[key]),
-            ...whereParams,
-          ];
+          const params = [...keys.map((key) => updateRecord[key]), ...whereParams];
 
           const query = `UPDATE ${table} SET ${setSql}${whereSql} RETURNING *`;
           return await bindParams(db.prepare(query), params).first<T>();
@@ -276,54 +272,40 @@ export const cloesceBetterAuthAdapter = (
             return 0;
           }
 
-          const setSql = keys.map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`).join(", ");
+          const setSql = keys
+            .map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`)
+            .join(", ");
           const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
-          const params = [
-            ...keys.map((key) => updateRecord[key]),
-            ...whereParams,
-          ];
+          const params = [...keys.map((key) => updateRecord[key]), ...whereParams];
 
           const query = `UPDATE ${table} SET ${setSql}${whereSql}`;
           const result = await bindParams(db.prepare(query), params).run();
           return result.meta.changes ?? 0;
         },
 
-        delete: async ({
-          model,
-          where,
-        }: {
-          model: string;
-          where: CleanedWhere[];
-        }) => {
+        delete: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
           const table = quoteIdentifier(model);
           const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           await bindParams(db.prepare(`DELETE FROM ${table}${whereSql}`), params).run();
         },
 
-        deleteMany: async ({
-          model,
-          where,
-        }: {
-          model: string;
-          where: CleanedWhere[];
-        }) => {
+        deleteMany: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
           const table = quoteIdentifier(model);
           const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
-          const result = await bindParams(db.prepare(`DELETE FROM ${table}${whereSql}`), params).run();
+          const result = await bindParams(
+            db.prepare(`DELETE FROM ${table}${whereSql}`),
+            params,
+          ).run();
           return result.meta.changes ?? 0;
         },
 
-        count: async ({
-          model,
-          where,
-        }: {
-          model: string;
-          where?: CleanedWhere[];
-        }) => {
+        count: async ({ model, where }: { model: string; where?: CleanedWhere[] }) => {
           const table = quoteIdentifier(model);
           const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
           const query = `SELECT COUNT(*) as total FROM ${table}${whereSql}`;
-          const result = await bindParams(db.prepare(query), params).first<{ total: number | string }>();
+          const result = await bindParams(db.prepare(query), params).first<{
+            total: number | string;
+          }>();
           return Number(result?.total ?? 0);
         },
       } satisfies CustomAdapter;

@@ -60,16 +60,12 @@ export default function VerifyEmailPage() {
 
   if (isSuccess) {
     return (
-      <AuthLayout
-        title="Email verified!"
-        subtitle="Your email has been successfully verified"
-      >
+      <AuthLayout title="Email verified!" subtitle="Your email has been successfully verified">
         <div className="text-center">
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Success!</p>
             <p className="text-sm mt-1">
-              Your email address has been verified. You can now use all features
-              of your account.
+              Your email address has been verified. You can now use all features of your account.
             </p>
           </div>
 
@@ -86,18 +82,13 @@ export default function VerifyEmailPage() {
 
   if (error || !token) {
     return (
-      <AuthLayout
-        title="Verification failed"
-        subtitle="We couldn't verify your email address"
-      >
+      <AuthLayout title="Verification failed" subtitle="We couldn't verify your email address">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            <p className="font-medium">
-              {error || "Invalid verification link"}
-            </p>
+            <p className="font-medium">{error || "Invalid verification link"}</p>
             <p className="text-sm mt-1">
-              The verification link may have expired or is invalid. Please try
-              signing in or request a new verification email.
+              The verification link may have expired or is invalid. Please try signing in or request
+              a new verification email.
             </p>
           </div>
 

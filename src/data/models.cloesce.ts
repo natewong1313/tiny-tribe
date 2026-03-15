@@ -1,11 +1,4 @@
-import {
-  Crud,
-  ForeignKey,
-  Model,
-  PrimaryKey,
-  R2,
-  WranglerEnv,
-} from "cloesce/backend";
+import { Crud, ForeignKey, Model, PrimaryKey, R2, WranglerEnv } from "cloesce/backend";
 import { D1Database, R2Bucket, R2ObjectBody } from "@cloudflare/workers-types";
 
 @WranglerEnv

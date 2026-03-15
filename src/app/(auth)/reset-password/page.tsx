@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const errorParam = searchParams.get("error");
-  
+
   const passwordId = useId();
   const confirmPasswordId = useId();
   const [isLoading, setIsLoading] = useState(false);
@@ -60,20 +60,15 @@ export default function ResetPasswordPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   if (isSuccess) {
     return (
-      <AuthLayout
-        title="Password reset successful"
-        subtitle="Your password has been updated"
-      >
+      <AuthLayout title="Password reset successful" subtitle="Your password has been updated">
         <div className="text-center">
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Password updated!</p>
-            <p className="text-sm mt-1">
-              Your password has been successfully reset.
-            </p>
+            <p className="text-sm mt-1">Your password has been successfully reset.</p>
           </div>
 
           <Link
@@ -89,16 +84,11 @@ export default function ResetPasswordPage() {
 
   if (!token && !errorParam) {
     return (
-      <AuthLayout
-        title="Invalid reset link"
-        subtitle="This password reset link is invalid"
-      >
+      <AuthLayout title="Invalid reset link" subtitle="This password reset link is invalid">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Invalid or expired link</p>
-            <p className="text-sm mt-1">
-              Please request a new password reset link.
-            </p>
+            <p className="text-sm mt-1">Please request a new password reset link.</p>
           </div>
 
           <Link
@@ -113,10 +103,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout
-      title="Reset your password"
-      subtitle="Enter your new password below"
-    >
+    <AuthLayout title="Reset your password" subtitle="Enter your new password below">
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -125,10 +112,7 @@ export default function ResetPasswordPage() {
         )}
 
         <div>
-          <label
-            htmlFor={passwordId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={passwordId} className="block text-sm font-medium text-tt-green-700 mb-1">
             New password
           </label>
           <input
@@ -141,9 +125,7 @@ export default function ResetPasswordPage() {
             className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
             placeholder="Create a new password"
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Must be at least 8 characters
-          </p>
+          <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
         </div>
 
         <div>
@@ -174,10 +156,7 @@ export default function ResetPasswordPage() {
         </button>
 
         <div className="text-center">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium text-tt-green-500 hover:underline"
-          >
+          <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
             ← Back to sign in
           </Link>
         </div>

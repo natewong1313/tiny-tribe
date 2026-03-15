@@ -21,7 +21,9 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState("");
-  const [usernameStatus, setUsernameStatus] = useState<"checking" | "available" | "taken" | null>(null);
+  const [usernameStatus, setUsernameStatus] = useState<"checking" | "available" | "taken" | null>(
+    null,
+  );
   const [isUsernameValid, setIsUsernameValid] = useState(false);
 
   useEffect(() => {
@@ -106,13 +108,10 @@ export default function SignUpPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <AuthLayout
-      title="Create your account"
-      subtitle="Join Tiny Tribe today"
-    >
+    <AuthLayout title="Create your account" subtitle="Join Tiny Tribe today">
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -121,10 +120,7 @@ export default function SignUpPage() {
         )}
 
         <div>
-          <label
-            htmlFor={usernameId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={usernameId} className="block text-sm font-medium text-tt-green-700 mb-1">
             Username
           </label>
           <input
@@ -151,9 +147,13 @@ export default function SignUpPage() {
             {usernameStatus === "taken" && (
               <span className="text-sm text-red-600">✗ Username already taken</span>
             )}
-            {usernameStatus === null && username.length > ZERO_LENGTH && username.length < MIN_USERNAME_LENGTH && (
-              <span className="text-sm text-gray-500">Username must be at least {MIN_USERNAME_LENGTH} characters</span>
-            )}
+            {usernameStatus === null &&
+              username.length > ZERO_LENGTH &&
+              username.length < MIN_USERNAME_LENGTH && (
+                <span className="text-sm text-gray-500">
+                  Username must be at least {MIN_USERNAME_LENGTH} characters
+                </span>
+              )}
           </div>
           <p className="mt-1 text-xs text-gray-500">
             3-20 characters, letters, numbers, underscores, and hyphens only
@@ -161,10 +161,7 @@ export default function SignUpPage() {
         </div>
 
         <div>
-          <label
-            htmlFor={nameId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={nameId} className="block text-sm font-medium text-tt-green-700 mb-1">
             Full name
           </label>
           <input
@@ -179,10 +176,7 @@ export default function SignUpPage() {
         </div>
 
         <div>
-          <label
-            htmlFor={emailId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={emailId} className="block text-sm font-medium text-tt-green-700 mb-1">
             Email address
           </label>
           <input
@@ -197,10 +191,7 @@ export default function SignUpPage() {
         </div>
 
         <div>
-          <label
-            htmlFor={passwordId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={passwordId} className="block text-sm font-medium text-tt-green-700 mb-1">
             Password
           </label>
           <input
@@ -213,9 +204,7 @@ export default function SignUpPage() {
             className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
             placeholder="Create a password"
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Must be at least 8 characters
-          </p>
+          <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
         </div>
 
         <div>
@@ -247,10 +236,7 @@ export default function SignUpPage() {
 
         <p className="text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link
-            href="/sign-in"
-            className="font-medium text-tt-green-600 hover:underline"
-          >
+          <Link href="/sign-in" className="font-medium text-tt-green-600 hover:underline">
             Sign in
           </Link>
         </p>

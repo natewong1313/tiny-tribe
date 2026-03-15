@@ -3,10 +3,6 @@ export const metadata = {
   title: "Authentication - Tiny Tribe",
 };
 
-const AuthLayout = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => children;
+const AuthLayout = ({ children }: { children: React.ReactNode }) => children;
 
 export default AuthLayout;

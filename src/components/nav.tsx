@@ -13,18 +13,9 @@ import Link from "vinext/shims/link";
 export default function Nav() {
   return (
     <div className="py-1 px-6 w-full bg-stone-300 flex items-center justify-between">
-      <NavButton
-        href="/"
-        icon={RiHome2Line}
-        selectedIcon={RiHome2Fill}
-        isSelected
-      />
+      <NavButton href="/" icon={RiHome2Line} selectedIcon={RiHome2Fill} isSelected />
       <NavButton href="/" icon={RiAddLine} selectedIcon={RiAddFill} />
-      <NavButton
-        href="/"
-        icon={RiAccountCircleLine}
-        selectedIcon={RiAccountCircleFill}
-      />
+      <NavButton href="/" icon={RiAccountCircleLine} selectedIcon={RiAccountCircleFill} />
     </div>
   );
 }
@@ -41,16 +32,10 @@ const NavButton = (props: NavButtonProps) => {
       href={props.href}
       className={cn(
         "rounded-md h-10 w-10 items-center justify-center flex",
-        props.isSelected
-          ? "text-tt-green-700 bg-stone-200"
-          : "text-stone-500 hover:bg-stone-200",
+        props.isSelected ? "text-tt-green-700 bg-stone-200" : "text-stone-500 hover:bg-stone-200",
       )}
     >
-      {props.isSelected ? (
-        <props.selectedIcon size={32} />
-      ) : (
-        <props.icon size={32} />
-      )}
+      {props.isSelected ? <props.selectedIcon size={32} /> : <props.icon size={32} />}
     </Link>
   );
 };

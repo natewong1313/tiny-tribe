@@ -39,10 +39,7 @@ export default function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <AuthLayout
-        title="Check your email"
-        subtitle="We've sent you a password reset link"
-      >
+      <AuthLayout title="Check your email" subtitle="We've sent you a password reset link">
         <div className="text-center">
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Reset link sent!</p>
@@ -64,10 +61,7 @@ export default function ForgotPasswordPage() {
           </button>
 
           <div className="mt-8">
-            <Link
-              href="/sign-in"
-              className="text-sm font-medium text-tt-green-500 hover:underline"
-            >
+            <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
               ← Back to sign in
             </Link>
           </div>
@@ -89,10 +83,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <div>
-          <label
-            htmlFor={emailId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={emailId} className="block text-sm font-medium text-tt-green-700 mb-1">
             Email address
           </label>
           <input
@@ -116,10 +107,7 @@ export default function ForgotPasswordPage() {
         </button>
 
         <div className="text-center">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium text-tt-green-500 hover:underline"
-          >
+          <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
             ← Back to sign in
           </Link>
         </div>

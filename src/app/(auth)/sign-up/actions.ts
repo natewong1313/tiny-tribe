@@ -12,7 +12,9 @@ interface CreateUserInput {
   username: string;
 }
 
-export const createUserProfile = async (input: CreateUserInput): Promise<{
+export const createUserProfile = async (
+  input: CreateUserInput,
+): Promise<{
   error?: string;
   ok: boolean;
 }> => {
@@ -60,7 +62,9 @@ export const createUserProfile = async (input: CreateUserInput): Promise<{
   }
 };
 
-export const checkUsernameAvailability = async (username: string): Promise<{
+export const checkUsernameAvailability = async (
+  username: string,
+): Promise<{
   available: boolean;
   error?: string;
   ok: boolean;

@@ -55,10 +55,7 @@ export default function SignInPage() {
         )}
 
         <div>
-          <label
-            htmlFor={emailId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
+          <label htmlFor={emailId} className="block text-sm font-medium text-tt-green-700 mb-1">
             Email address
           </label>
           <input
@@ -109,10 +106,7 @@ export default function SignInPage() {
 
         <p className="text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
-          <Link
-            href="/sign-up"
-            className="font-medium text-tt-green-600 hover:underline"
-          >
+          <Link href="/sign-up" className="font-medium text-tt-green-600 hover:underline">
             Sign up
           </Link>
         </p>
