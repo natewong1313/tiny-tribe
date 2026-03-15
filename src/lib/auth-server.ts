@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { createAuth } from "@/lib/auth";
+import { env } from "cloudflare:workers";
 
 export const getAuth = () =>
   createAuth({

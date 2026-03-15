@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useEffect, useId, useState } from "react";
 import Link from "vinext/shims/link";
 import { useSearchParams } from "vinext/shims/navigation";
 import { AuthLayout } from "../_components/auth-layout";
 
-export default function ResetPasswordPage() {
+const ResetPasswordPage = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const errorParam = searchParams.get("error");
@@ -60,6 +60,13 @@ export default function ResetPasswordPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const buttonText = () => {
+    if (isLoading) {
+      return "Resetting...";
+    }
+    return "Reset password";
   };
 
   if (isSuccess) {
@@ -151,16 +158,17 @@ export default function ResetPasswordPage() {
           disabled={isLoading}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tt-green-600 hover:bg-tt-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tt-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading && "Resetting..."}
-          {!isLoading && "Reset password"}
+          {buttonText()}
         </button>
 
         <div className="text-center">
           <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
-            ← Back to sign in
+            Back to sign in
           </Link>
         </div>
       </form>
     </AuthLayout>
   );
-}
+};
+
+export default ResetPasswordPage;

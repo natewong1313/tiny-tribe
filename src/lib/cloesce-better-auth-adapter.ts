@@ -1,44 +1,56 @@
 import { D1Database } from "@cloudflare/workers-types";
 import {
-  createAdapterFactory,
   type CleanedWhere,
   type CustomAdapter,
   type DBAdapterDebugLogOption,
+  createAdapterFactory,
 } from "better-auth/adapters";
 
 interface CloesceD1AdapterConfig {
   debugLogs?: DBAdapterDebugLogOption;
 }
 
-function quoteIdentifier(identifier: string): string {
+const quoteIdentifier = (identifier: string): string => {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
     throw new Error(`Invalid SQL identifier: ${identifier}`);
   }
   return `"${identifier}"`;
+};
+
+interface WhereResult {
+  params: unknown[];
+  sql: string;
 }
 
-function applyWhere(
+const ZERO_LENGTH = 0;
+const FIRST_INDEX = 0;
+
+const getConnector = (index: number, connector: string): string => {
+  if (FIRST_INDEX === index) {
+    return "";
+  }
+  return ` ${connector} `;
+};
+
+const applyWhere = (
   where: CleanedWhere[] | undefined,
-  getFieldName: (opts: { model: string; field: string }) => string,
+  getFieldName: (opts: { field: string; model: string }) => string,
   model: string,
-): {
-  sql: string;
-  params: unknown[];
-} {
-  if (!where || where.length === 0) {
-    return { sql: "", params: [] };
+): WhereResult => {
+  if (!where || ZERO_LENGTH === where.length) {
+    return { params: [], sql: "" };
   }
 
   const parts: string[] = [];
   const params: unknown[] = [];
 
   where.forEach((clause, index) => {
-    const connector = index === 0 ? "" : ` ${clause.connector} `;
-    const field = quoteIdentifier(getFieldName({ model, field: clause.field }));
+    const connector = getConnector(index, clause.connector);
+    const field = quoteIdentifier(getFieldName({ field: clause.field, model }));
 
     switch (clause.operator) {
       case "eq": {
-        if (clause.value === null) {
+        if (null === clause.value) {
           parts.push(`${connector}${field} IS NULL`);
         } else {
           parts.push(`${connector}${field} = ?`);
@@ -47,7 +59,7 @@ function applyWhere(
         break;
       }
       case "ne": {
-        if (clause.value === null) {
+        if (null === clause.value) {
           parts.push(`${connector}${field} IS NOT NULL`);
         } else {
           parts.push(`${connector}${field} != ?`);
@@ -74,14 +86,20 @@ function applyWhere(
         if (!Array.isArray(clause.value)) {
           throw new Error(`Operator ${clause.operator} requires an array value`);
         }
-        if (clause.value.length === 0) {
-          parts.push(clause.operator === "in" ? `${connector}1 = 0` : `${connector}1 = 1`);
+        if (ZERO_LENGTH === clause.value.length) {
+          if ("in" === clause.operator) {
+            parts.push(`${connector}1 = 0`);
+          } else {
+            parts.push(`${connector}1 = 1`);
+          }
           break;
         }
         const placeholders = clause.value.map(() => "?").join(", ");
-        parts.push(
-          `${connector}${field} ${clause.operator === "in" ? "IN" : "NOT IN"} (${placeholders})`,
-        );
+        let operator = "NOT IN";
+        if ("in" === clause.operator) {
+          operator = "IN";
+        }
+        parts.push(`${connector}${field} ${operator} (${placeholders})`);
         params.push(...clause.value);
         break;
       }
@@ -107,45 +125,44 @@ function applyWhere(
   });
 
   return {
-    sql: ` WHERE ${parts.join("")}`,
     params,
+    sql: ` WHERE ${parts.join("")}`,
   };
-}
+};
 
-function normalizeValue(value: unknown): unknown {
+const normalizeValue = (value: unknown): unknown => {
   if (value instanceof Date) {
     return value.toISOString();
   }
   return value;
-}
+};
 
-function bindParams<T extends { bind: (...values: unknown[]) => T }>(
+const bindParams = <T extends { bind: (...values: unknown[]) => T }>(
   statement: T,
   params: unknown[],
-): T {
-  if (params.length === 0) {
+): T => {
+  if (ZERO_LENGTH === params.length) {
     return statement;
   }
   const normalizedParams = params.map(normalizeValue);
   return statement.bind(...normalizedParams);
-}
+};
 
 export const cloesceBetterAuthAdapter = (db: D1Database, config: CloesceD1AdapterConfig = {}) =>
   createAdapterFactory({
-    config: {
-      adapterId: "cloesce-d1",
-      adapterName: "Cloesce D1 Adapter",
-      usePlural: false,
-      debugLogs: config.debugLogs ?? false,
-      supportsJSON: false,
-      supportsDates: false,
-      supportsBooleans: false,
-      supportsArrays: false,
-      transaction: false,
-    },
     adapter: ({ getFieldName }) => {
       return {
-        create: async <T extends Record<string, any>>({
+        count: async ({ model, where }: { model: string; where?: CleanedWhere[] }) => {
+          const table = quoteIdentifier(model);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
+          const query = `SELECT COUNT(*) as total FROM ${table}${whereSql}`;
+          const result = await bindParams(db.prepare(query), params).first<{
+            total: number | string;
+          }>();
+          return Number(result?.total ?? ZERO_LENGTH);
+        },
+
+        create: async <T extends { [key: string]: unknown }>({
           model,
           data,
         }: {
@@ -154,15 +171,15 @@ export const cloesceBetterAuthAdapter = (db: D1Database, config: CloesceD1Adapte
           select?: string[];
         }) => {
           const table = quoteIdentifier(model);
-          const record = data as Record<string, unknown>;
+          const record = data as { [key: string]: unknown };
           const keys = Object.keys(record);
 
-          const sql =
-            keys.length > 0
-              ? `INSERT INTO ${table} (${keys.map((key) => quoteIdentifier(getFieldName({ model, field: key }))).join(", ")}) VALUES (${keys
-                  .map(() => "?")
-                  .join(", ")}) RETURNING *`
-              : `INSERT INTO ${table} DEFAULT VALUES RETURNING *`;
+          let sql = `INSERT INTO ${table} DEFAULT VALUES RETURNING *`;
+          if (ZERO_LENGTH < keys.length) {
+            sql = `INSERT INTO ${table} (${keys.map((key) => quoteIdentifier(getFieldName({ field: key, model }))).join(", ")}) VALUES (${keys
+              .map(() => "?")
+              .join(", ")}) RETURNING *`;
+          }
 
           const params = keys.map((key) => record[key]);
           const result = await bindParams(db.prepare(sql), params).first<T>();
@@ -170,117 +187,6 @@ export const cloesceBetterAuthAdapter = (db: D1Database, config: CloesceD1Adapte
             throw new Error(`Insert failed for model ${model}`);
           }
           return result;
-        },
-
-        findOne: async <T>({
-          model,
-          where,
-          select,
-        }: {
-          model: string;
-          where: CleanedWhere[];
-          select?: string[];
-        }) => {
-          const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
-          const columns =
-            select && select.length > 0 ? select.map(quoteIdentifier).join(", ") : "*";
-
-          const query = `SELECT ${columns} FROM ${table}${whereSql} LIMIT 1`;
-          return await bindParams(db.prepare(query), params).first<T>();
-        },
-
-        findMany: async <T>({
-          model,
-          where,
-          limit,
-          select,
-          sortBy,
-          offset,
-        }: {
-          model: string;
-          where?: CleanedWhere[];
-          limit: number;
-          select?: string[];
-          sortBy?: { field: string; direction: "asc" | "desc" };
-          offset?: number;
-        }) => {
-          const table = quoteIdentifier(model);
-          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
-          const columns =
-            select && select.length > 0 ? select.map(quoteIdentifier).join(", ") : "*";
-
-          const sortSql = sortBy
-            ? ` ORDER BY ${quoteIdentifier(getFieldName({ model, field: sortBy.field }))} ${sortBy.direction.toUpperCase()}`
-            : "";
-          const limitSql = typeof limit === "number" ? " LIMIT ?" : "";
-          const offsetSql = typeof offset === "number" ? " OFFSET ?" : "";
-
-          const query = `SELECT ${columns} FROM ${table}${whereSql}${sortSql}${limitSql}${offsetSql}`;
-
-          const queryParams = [...params];
-          if (typeof limit === "number") {
-            queryParams.push(limit);
-          }
-          if (typeof offset === "number") {
-            queryParams.push(offset);
-          }
-
-          const result = await bindParams(db.prepare(query), queryParams).all<T>();
-          return result.results ?? [];
-        },
-
-        update: async <T>({
-          model,
-          where,
-          update,
-        }: {
-          model: string;
-          where: CleanedWhere[];
-          update: T;
-        }) => {
-          const table = quoteIdentifier(model);
-          const updateRecord = update as Record<string, unknown>;
-          const keys = Object.keys(updateRecord);
-          if (keys.length === 0) {
-            return null;
-          }
-
-          const setSql = keys
-            .map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`)
-            .join(", ");
-          const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
-          const params = [...keys.map((key) => updateRecord[key]), ...whereParams];
-
-          const query = `UPDATE ${table} SET ${setSql}${whereSql} RETURNING *`;
-          return await bindParams(db.prepare(query), params).first<T>();
-        },
-
-        updateMany: async ({
-          model,
-          where,
-          update,
-        }: {
-          model: string;
-          where: CleanedWhere[];
-          update: Record<string, unknown>;
-        }) => {
-          const table = quoteIdentifier(model);
-          const updateRecord = update as Record<string, unknown>;
-          const keys = Object.keys(updateRecord);
-          if (keys.length === 0) {
-            return 0;
-          }
-
-          const setSql = keys
-            .map((key) => `${quoteIdentifier(getFieldName({ model, field: key }))} = ?`)
-            .join(", ");
-          const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
-          const params = [...keys.map((key) => updateRecord[key]), ...whereParams];
-
-          const query = `UPDATE ${table} SET ${setSql}${whereSql}`;
-          const result = await bindParams(db.prepare(query), params).run();
-          return result.meta.changes ?? 0;
         },
 
         delete: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
@@ -296,18 +202,141 @@ export const cloesceBetterAuthAdapter = (db: D1Database, config: CloesceD1Adapte
             db.prepare(`DELETE FROM ${table}${whereSql}`),
             params,
           ).run();
-          return result.meta.changes ?? 0;
+          return result.meta.changes ?? ZERO_LENGTH;
         },
 
-        count: async ({ model, where }: { model: string; where?: CleanedWhere[] }) => {
+        findMany: async <T>({
+          model,
+          where,
+          limit,
+          select,
+          sortBy,
+          offset,
+        }: {
+          model: string;
+          where?: CleanedWhere[];
+          limit: number;
+          select?: string[];
+          sortBy?: { direction: "asc" | "desc"; field: string };
+          offset?: number;
+        }) => {
           const table = quoteIdentifier(model);
           const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
-          const query = `SELECT COUNT(*) as total FROM ${table}${whereSql}`;
-          const result = await bindParams(db.prepare(query), params).first<{
-            total: number | string;
-          }>();
-          return Number(result?.total ?? 0);
+          let columns = "*";
+          if (select && ZERO_LENGTH < select.length) {
+            columns = select.map(quoteIdentifier).join(", ");
+          }
+
+          let sortSql = "";
+          if (sortBy) {
+            sortSql = ` ORDER BY ${quoteIdentifier(getFieldName({ field: sortBy.field, model }))} ${sortBy.direction.toUpperCase()}`;
+          }
+          let limitSql = "";
+          if ("number" === typeof limit) {
+            limitSql = " LIMIT ?";
+          }
+          let offsetSql = "";
+          if ("number" === typeof offset) {
+            offsetSql = " OFFSET ?";
+          }
+
+          const query = `SELECT ${columns} FROM ${table}${whereSql}${sortSql}${limitSql}${offsetSql}`;
+
+          const queryParams = [...params];
+          if ("number" === typeof limit) {
+            queryParams.push(limit);
+          }
+          if ("number" === typeof offset) {
+            queryParams.push(offset);
+          }
+
+          const result = await bindParams(db.prepare(query), queryParams).all<T>();
+          return result.results ?? [];
+        },
+
+        findOne: async <T>({
+          model,
+          where,
+          select,
+        }: {
+          model: string;
+          where: CleanedWhere[];
+          select?: string[];
+        }) => {
+          const table = quoteIdentifier(model);
+          const { sql: whereSql, params } = applyWhere(where, getFieldName, model);
+          let columns = "*";
+          if (select && ZERO_LENGTH < select.length) {
+            columns = select.map(quoteIdentifier).join(", ");
+          }
+
+          const query = `SELECT ${columns} FROM ${table}${whereSql} LIMIT 1`;
+          return await bindParams(db.prepare(query), params).first<T>();
+        },
+
+        update: async <T>({
+          model,
+          where,
+          update,
+        }: {
+          model: string;
+          where: CleanedWhere[];
+          update: T;
+        }) => {
+          const table = quoteIdentifier(model);
+          const updateRecord = update as { [key: string]: unknown };
+          const keys = Object.keys(updateRecord);
+          if (ZERO_LENGTH === keys.length) {
+            return null;
+          }
+
+          const setSql = keys
+            .map((key) => `${quoteIdentifier(getFieldName({ field: key, model }))} = ?`)
+            .join(", ");
+          const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
+          const params = [...keys.map((key) => updateRecord[key]), ...whereParams];
+
+          const query = `UPDATE ${table} SET ${setSql}${whereSql} RETURNING *`;
+          return await bindParams(db.prepare(query), params).first<T>();
+        },
+
+        updateMany: async ({
+          model,
+          where,
+          update,
+        }: {
+          model: string;
+          where: CleanedWhere[];
+          update: { [key: string]: unknown };
+        }) => {
+          const table = quoteIdentifier(model);
+          const updateRecord = update as { [key: string]: unknown };
+          const keys = Object.keys(updateRecord);
+          if (ZERO_LENGTH === keys.length) {
+            return ZERO_LENGTH;
+          }
+
+          const setSql = keys
+            .map((key) => `${quoteIdentifier(getFieldName({ field: key, model }))} = ?`)
+            .join(", ");
+          const { sql: whereSql, params: whereParams } = applyWhere(where, getFieldName, model);
+          const params = [...keys.map((key) => updateRecord[key]), ...whereParams];
+
+          const query = `UPDATE ${table} SET ${setSql}${whereSql}`;
+          const result = await bindParams(db.prepare(query), params).run();
+          return result.meta.changes ?? ZERO_LENGTH;
         },
       } satisfies CustomAdapter;
+    },
+    config: {
+      adapterId: "cloesce-d1",
+      adapterName: "Cloesce D1 Adapter",
+      debugLogs: config.debugLogs ?? false,
+      supportsArrays: false,
+      supportsBooleans: false,
+      supportsDates: false,
+      supportsJSON: false,
+      transaction: false,
+      usePlural: false,
     },
   });

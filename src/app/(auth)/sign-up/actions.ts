@@ -1,23 +1,23 @@
 "use server";
 
-import { env } from "cloudflare:workers";
 import { User } from "@/data/models.cloesce";
+import { env } from "cloudflare:workers";
 import { getCloesceOrm } from "@/lib/cloesce-runtime";
 
 interface CreateUserInput {
-  id: string;
-  name: string;
   email: string;
+  id: string;
   image?: string | null;
+  name: string;
   username: string;
 }
 
-export const createUserProfile = async (
-  input: CreateUserInput,
-): Promise<{
+interface CreateUserResult {
   error?: string;
   ok: boolean;
-}> => {
+}
+
+const createUserProfile = async (input: CreateUserInput): Promise<CreateUserResult> => {
   if (!input.id || !input.name || !input.email || !input.username) {
     return {
       error: "id, name, email, and username are required",
@@ -62,13 +62,13 @@ export const createUserProfile = async (
   }
 };
 
-export const checkUsernameAvailability = async (
-  username: string,
-): Promise<{
+interface CheckUsernameResult {
   available: boolean;
   error?: string;
   ok: boolean;
-}> => {
+}
+
+const checkUsernameAvailability = async (username: string): Promise<CheckUsernameResult> => {
   if (!username) {
     return { available: false, error: "Username is required", ok: false };
   }
@@ -96,3 +96,5 @@ export const checkUsernameAvailability = async (
     };
   }
 };
+
+export { checkUsernameAvailability, createUserProfile };

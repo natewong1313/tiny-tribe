@@ -17,3 +17,8 @@ If you add new models to `src/data/models.cloesce.ts`, you'll need to run migrat
 bunx cloesce migrate db <name of migration>
 bun run migrate:wrangler
 ```
+Verify your code compiles and passes lints with
+```bash
+bun run type-check
+bun run lint
+```

@@ -9,10 +9,12 @@
 		"dev": "vite dev --port 3000",
 		"build": "vite build",
 		"start": "vite preview",
+		"line": "bun run lint",
 		"lint": "oxlint --config .oxlintrc.json",
 		"format:check": "oxfmt --check src",
 		"format": "oxfmt --write src",
-		"type-check": "tsc --noEmit --project tsconfig.json"
+		"type-check": "tsc --noEmit --project tsconfig.json",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"better-auth": "^1.5.5",
@@ -31,6 +33,7 @@
 		"@vitejs/plugin-rsc": "^0.5.21",
 		"babel-plugin-react-compiler": "1.0.0",
 		"clsx": "^2.1.1",
+		"husky": "^9.1.7",
 		"oxc-transform": "^0.58.1",
 		"oxfmt": "^0.40.0",
 		"oxlint": "^0.15.15",

@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useCallback, useEffect, useState } from "react";
 import Link from "vinext/shims/link";
 import { useSearchParams } from "vinext/shims/navigation";
 import { AuthLayout } from "../_components/auth-layout";
 
-export default function VerifyEmailPage() {
+const VerifyEmailPage = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -113,4 +113,6 @@ export default function VerifyEmailPage() {
   }
 
   return null;
-}
+};
+
+export default VerifyEmailPage;

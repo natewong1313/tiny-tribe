@@ -1,11 +1,11 @@
 "use client";
 
-import { useId, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useId, useState } from "react";
 import Link from "vinext/shims/link";
 import { AuthLayout } from "../_components/auth-layout";
 
-export default function ForgotPasswordPage() {
+const ForgotPasswordPage = () => {
   const emailId = useId();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -37,6 +37,13 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const buttonText = () => {
+    if (isLoading) {
+      return "Sending...";
+    }
+    return "Send reset link";
+  };
+
   if (isSubmitted) {
     return (
       <AuthLayout title="Check your email" subtitle="We've sent you a password reset link">
@@ -62,7 +69,7 @@ export default function ForgotPasswordPage() {
 
           <div className="mt-8">
             <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
-              ← Back to sign in
+              Back to sign in
             </Link>
           </div>
         </div>
@@ -102,16 +109,17 @@ export default function ForgotPasswordPage() {
           disabled={isLoading}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tt-green-600 hover:bg-tt-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tt-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading && "Sending..."}
-          {!isLoading && "Send reset link"}
+          {buttonText()}
         </button>
 
         <div className="text-center">
           <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
-            ← Back to sign in
+            Back to sign in
           </Link>
         </div>
       </form>
     </AuthLayout>
   );
-}
+};
+
+export default ForgotPasswordPage;

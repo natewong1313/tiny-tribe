@@ -1,16 +1,15 @@
 "use client";
 
-import { useId, useState } from "react";
 import { signIn } from "@/lib/auth-client";
+import { AuthLayout } from "../_components/auth-layout";
+import { useId, useState } from "react";
 import Link from "vinext/shims/link";
 import { useRouter } from "vinext/shims/navigation";
-import { AuthLayout } from "../_components/auth-layout";
 
-export default function SignInPage() {
+const SignInPage = () => {
   const router = useRouter();
   const emailId = useId();
   const passwordId = useId();
-  const _rememberMeId = useId();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +39,13 @@ export default function SignInPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const buttonText = () => {
+    if (isLoading) {
+      return "Signing in...";
+    }
+    return "Sign in";
   };
 
   return (
@@ -100,8 +106,7 @@ export default function SignInPage() {
           disabled={isLoading}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tt-green-600 hover:bg-tt-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tt-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading && "Signing in..."}
-          {!isLoading && "Sign in"}
+          {buttonText()}
         </button>
 
         <p className="text-center text-sm text-gray-600">
@@ -113,4 +118,6 @@ export default function SignInPage() {
       </form>
     </AuthLayout>
   );
-}
+};
+
+export default SignInPage;

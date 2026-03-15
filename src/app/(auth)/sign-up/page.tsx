@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { signUp } from "@/lib/auth-client";
 import { checkUsernameAvailability, createUserProfile } from "./actions";
+import { signUp } from "@/lib/auth-client";
+import { useEffect, useId, useState } from "react";
 import Link from "vinext/shims/link";
 import { useRouter } from "vinext/shims/navigation";
 import { AuthLayout } from "../_components/auth-layout";
@@ -11,7 +11,7 @@ const MIN_USERNAME_LENGTH = 3;
 const DEBOUNCE_DELAY = 300;
 const ZERO_LENGTH = 0;
 
-export default function SignUpPage() {
+const SignUpPage = () => {
   const router = useRouter();
   const usernameId = useId();
   const nameId = useId();
@@ -79,8 +79,8 @@ export default function SignUpPage() {
 
     try {
       const result = await signUp.email({
-        name,
         email,
+        name,
         password,
       });
 
@@ -88,11 +88,11 @@ export default function SignUpPage() {
         setError(result.error.message || "Failed to sign up");
       } else {
         const createUserResult = await createUserProfile({
-          id: result.data?.user?.id || "",
-          name,
           email,
-          username,
+          id: result.data?.user?.id || "",
           image: result.data?.user?.image ?? null,
+          name,
+          username,
         });
 
         if (!createUserResult.ok) {
@@ -108,6 +108,13 @@ export default function SignUpPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const buttonText = () => {
+    if (isLoading) {
+      return "Creating account...";
+    }
+    return "Create account";
   };
 
   return (
@@ -138,16 +145,16 @@ export default function SignUpPage() {
             placeholder="johndoe"
           />
           <div className="mt-1 flex items-center gap-2">
-            {usernameStatus === "checking" && (
+            {"checking" === usernameStatus && (
               <span className="text-sm text-gray-500">Checking availability...</span>
             )}
-            {usernameStatus === "available" && (
-              <span className="text-sm text-green-600">✓ Username available</span>
+            {"available" === usernameStatus && (
+              <span className="text-sm text-green-600">Username available</span>
             )}
-            {usernameStatus === "taken" && (
-              <span className="text-sm text-red-600">✗ Username already taken</span>
+            {"taken" === usernameStatus && (
+              <span className="text-sm text-red-600">Username already taken</span>
             )}
-            {usernameStatus === null &&
+            {null === usernameStatus &&
               username.length > ZERO_LENGTH &&
               username.length < MIN_USERNAME_LENGTH && (
                 <span className="text-sm text-gray-500">
@@ -230,8 +237,7 @@ export default function SignUpPage() {
           disabled={isLoading || !isUsernameValid}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tt-green-600 hover:bg-tt-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tt-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading && "Creating account..."}
-          {!isLoading && "Create account"}
+          {buttonText()}
         </button>
 
         <p className="text-center text-sm text-gray-600">
@@ -243,4 +249,6 @@ export default function SignUpPage() {
       </form>
     </AuthLayout>
   );
-}
+};
+
+export default SignUpPage;

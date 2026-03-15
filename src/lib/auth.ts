@@ -1,6 +1,6 @@
+import { D1Database } from "@cloudflare/workers-types";
 import { betterAuth } from "better-auth";
 import { cloesceBetterAuthAdapter } from "@/lib/cloesce-better-auth-adapter";
-import { D1Database } from "@cloudflare/workers-types";
 
 interface Env {
   BETTER_AUTH_SECRET: string;

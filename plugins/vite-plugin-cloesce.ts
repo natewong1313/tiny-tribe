@@ -1,6 +1,5 @@
 import { execFileSync } from "node:child_process";
-import type { ViteDevServer } from "vite";
-import type { Plugin } from "vite";
+import type { Plugin, ViteDevServer } from "vite";
 
 const BUILD_COMPILE_GUARD = Symbol.for("cloesce.build.compile.guard");
 
@@ -14,8 +13,15 @@ const getBuildGuard = (): Set<string> => {
   return scope[BUILD_COMPILE_GUARD];
 };
 
+const getNpxCommand = (): string => {
+  if ("win32" === process.platform) {
+    return "npx.cmd";
+  }
+  return "npx";
+};
+
 const runCompile = (root: string) => {
-  const npx = "win32" === process.platform ? "npx.cmd" : "npx";
+  const npx = getNpxCommand();
   execFileSync(npx, ["cloesce", "compile"], {
     cwd: root,
     env: process.env,
@@ -29,10 +35,7 @@ export const cloescePlugin = (): Plugin => {
   let running = false;
   let queued = false;
 
-  const compile = (
-    onError: (error: unknown) => void,
-    onSuccess?: () => void,
-  ) => {
+  const compile = (onError: (error: unknown) => void, onSuccess?: () => void) => {
     if (running) {
       queued = true;
       return;
@@ -93,11 +96,14 @@ export const cloescePlugin = (): Plugin => {
         return;
       }
 
-      compile((error) => {
-        this.error(`[cloesce] compile failed: ${String(error)}`);
-      }, () => {
-        guard.add(root);
-      });
+      compile(
+        (error) => {
+          this.error(`[cloesce] compile failed: ${String(error)}`);
+        },
+        () => {
+          guard.add(root);
+        },
+      );
     },
     configResolved(config) {
       root = config.root;

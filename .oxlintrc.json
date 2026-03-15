@@ -9,11 +9,12 @@
 		"nursery": "off",
 		"restriction": "off"
 	},
-	"rules": {
-		"suspicious/no_unknown_at_rule": "off",
-		"react/react-in-jsx-scope": "off",
-		"react/jsx-uses-react": "off"
-	},
+  "rules": {
+    "suspicious/no_unknown_at_rule": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-uses-react": "off",
+    "sort-imports": "off"
+  },
 	"settings": {
 		"react": {
 			"version": "19.2.4"

@@ -1,7 +1,7 @@
 "use client";
 
-import { ReactNode } from "react";
 import Link from "vinext/shims/link";
+import type { ReactNode } from "react";
 
 interface AuthLayoutProps {
   children: ReactNode;
