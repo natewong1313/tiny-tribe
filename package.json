@@ -20,8 +20,11 @@
 		"@tanstack/zod-form-adapter": "^0.42.1",
 		"better-auth": "^1.5.5",
 		"cloesce": "^0.2.2",
+		"filepond-plugin-image-exif-orientation": "^1.0.11",
+		"filepond-plugin-image-preview": "^4.6.12",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
+		"react-filepond": "^7.1.3",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {

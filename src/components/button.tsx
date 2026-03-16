@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   isLoading?: boolean;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "black";
 }
 
 export const Button = ({
@@ -22,6 +22,8 @@ export const Button = ({
       "text-white bg-tt-green-600 hover:bg-tt-green-700 focus:ring-tt-green-500",
     secondary:
       "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:ring-tt-green-500",
+    black:
+      "text-white bg-black hover:bg-gray-800 focus:ring-gray-500",
   };
 
   return (

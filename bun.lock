@@ -9,8 +9,11 @@
         "@tanstack/zod-form-adapter": "^0.42.1",
         "better-auth": "^1.5.5",
         "cloesce": "^0.2.2",
+        "filepond-plugin-image-exif-orientation": "^1.0.11",
+        "filepond-plugin-image-preview": "^4.6.12",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
+        "react-filepond": "^7.1.3",
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -640,6 +643,12 @@
 
     "fflate": ["fflate@0.7.4", "", {}, "sha512-5u2V/CDW15QM1XbbgS+0DfPxVB+jUKhWEKuuFuHncbk3tEEqzmoXL+2KyOFuKGqOnmdIy0/davWF1CkuwtibCw=="],
 
+    "filepond": ["filepond@4.32.12", "", {}, "sha512-wro0/deLwua9CkL7HJygOlDaPo1c7Ov8kfzbZjH7m4hdi56gdHGDeRWnYa+qXnRm3Lty69gUGVFb3JZy/9vT8g=="],
+
+    "filepond-plugin-image-exif-orientation": ["filepond-plugin-image-exif-orientation@1.0.11", "", { "peerDependencies": { "filepond": ">=3.x <5.x" } }, "sha512-hLBc12Fk6Zkj3L8mSAn+elugHOqT5rLUbgVXQQIQjMe0FsGjtpoxqeVR6jt4IWHGat2L9sFAgU2TGmd1mqosCg=="],
+
+    "filepond-plugin-image-preview": ["filepond-plugin-image-preview@4.6.12", "", { "peerDependencies": { "filepond": ">=4.x <5.x" } }, "sha512-Y8ETX5QVV0mbPB0586UH8AUmG9tZg8PuN5bdEAIlZVJFTct5ebViJ7+Am94/VhTPjLqZjBf1zmDq5JU6XRsZKw=="],
+
     "fill-range": ["fill-range@7.1.1", "", { "dependencies": { "to-regex-range": "^5.0.1" } }, "sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg=="],
 
     "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
@@ -785,6 +794,8 @@
     "react": ["react@19.2.4", "", {}, "sha512-9nfp2hYpCwOjAN+8TZFGhtWEwgvWHXqESH8qT89AT/lWklpLON22Lc8pEtnpsZz7VmawabSU0gCjnj8aC0euHQ=="],
 
     "react-dom": ["react-dom@19.2.4", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.4" } }, "sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ=="],
+
+    "react-filepond": ["react-filepond@7.1.3", "", { "peerDependencies": { "filepond": ">=3.7.x < 5.x", "react": "16 - 19", "react-dom": "16 - 19" } }, "sha512-uQOCZt+YXnBfYn6OxK6vsgSoUROkBu/ZahcfIJnK94c1ZeSAS84L/XKDADq/8Adx/Lz88VtVWvUpTXnNpmjHFQ=="],
 
     "react-refresh": ["react-refresh@0.18.0", "", {}, "sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw=="],
 
