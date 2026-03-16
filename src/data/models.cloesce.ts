@@ -1,5 +1,16 @@
-import { Crud, ForeignKey, Model, PrimaryKey, R2, WranglerEnv } from "cloesce/backend";
-import { D1Database, R2Bucket, R2ObjectBody } from "@cloudflare/workers-types";
+import {
+  Crud,
+  ForeignKey,
+  Get,
+  HttpResult,
+  Inject,
+  Model,
+  PrimaryKey,
+  Put,
+  R2,
+  WranglerEnv,
+} from "cloesce/backend";
+import { D1Database, R2Bucket, R2ObjectBody, ReadableStream } from "@cloudflare/workers-types";
 
 @WranglerEnv
 export class Env {
@@ -23,7 +34,21 @@ export class User {
   posts!: Post[];
 
   @R2("user/photos/{id}.png", "bucket")
-  photo!: R2ObjectBody;
+  photo!: R2ObjectBody | undefined;
+
+  @Put()
+  async uploadPhoto(@Inject env: Env, stream: ReadableStream): Promise<HttpResult<void>> {
+    await env.bucket.put(`user/photos/${this.id}.png`, stream);
+    return HttpResult.ok(200);
+  }
+
+  @Get({ includeTree: { photo: {} } })
+  downloadPhoto(): HttpResult<ReadableStream> {
+    if (!this.photo) {
+      return HttpResult.fail(404, "Photo not found");
+    }
+    return HttpResult.ok(200, this.photo.body);
+  }
 }
 
 @Model("db")
