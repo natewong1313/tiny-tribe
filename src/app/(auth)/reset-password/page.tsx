@@ -20,19 +20,17 @@ const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
-
 const ResetPasswordPage = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const errorParam = searchParams.get("error");
 
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   useEffect(() => {
     if ("INVALID_TOKEN" === errorParam) {
-      setError(
+      setTokenError(
         "This reset link has expired or is invalid. Please request a new one.",
       );
     }
@@ -46,13 +44,13 @@ const ResetPasswordPage = () => {
     validators: {
       onSubmit: resetPasswordSchema,
     },
-    onSubmit: async ({ value }: { value: ResetPasswordFormData }) => {
+    onSubmit: async ({ value, formApi }) => {
       if (!token) {
-        setError("Reset token is missing. Please request a new reset link.");
+        formApi.fieldInfo.password.instance?.setErrorMap({
+          onSubmit: "Reset token is missing. Please request a new reset link.",
+        });
         return;
       }
-
-      setError(null);
 
       try {
         const result = await authClient.resetPassword({
@@ -61,12 +59,16 @@ const ResetPasswordPage = () => {
         });
 
         if (result.error) {
-          setError(result.error.message || "Failed to reset password");
+          formApi.fieldInfo.password.instance?.setErrorMap({
+            onSubmit: result.error.message || "Failed to reset password",
+          });
         } else {
           setIsSuccess(true);
         }
       } catch {
-        setError("An unexpected error occurred");
+        formApi.fieldInfo.password.instance?.setErrorMap({
+          onSubmit: "An unexpected error occurred",
+        });
       }
     },
   });
@@ -96,7 +98,29 @@ const ResetPasswordPage = () => {
     );
   }
 
-  if (!token && !errorParam) {
+  if (tokenError) {
+    return (
+      <AuthLayout
+        title="Invalid reset link"
+        subtitle="This password reset link is invalid"
+      >
+        <div className="text-center">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <p className="font-medium">{tokenError}</p>
+          </div>
+
+          <Link
+            href="/forgot-password"
+            className="inline-flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tt-green-600 hover:bg-tt-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tt-green-500 transition-colors"
+          >
+            Request new reset link
+          </Link>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (!token) {
     return (
       <AuthLayout
         title="Invalid reset link"
@@ -134,12 +158,6 @@ const ResetPasswordPage = () => {
         }}
         className="space-y-6"
       >
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
         <form.Field name="password">
           {(field) => (
             <Input

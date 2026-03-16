@@ -27,6 +27,11 @@ const CLOESCE_WORKER_URL = "http://localhost:3000/api/cloesce";
 let appPromise: Promise<CloesceApp> | null = null;
 
 export const getCloesceApp = async (): Promise<CloesceApp> => {
+  // In dev mode, don't cache to avoid stale I/O references after HMR
+  if (process.env.NODE_ENV === "development") {
+    return CloesceApp.init(cidl as any, constructorRegistry, CLOESCE_WORKER_URL);
+  }
+  
   if (!appPromise) {
     appPromise = CloesceApp.init(cidl as any, constructorRegistry, CLOESCE_WORKER_URL);
   }

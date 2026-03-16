@@ -13,11 +13,8 @@ const forgotPasswordSchema = z.object({
   email: z.email("Please enter a valid email address"),
 });
 
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
-
 const ForgotPasswordPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -26,9 +23,7 @@ const ForgotPasswordPage = () => {
     validators: {
       onSubmit: forgotPasswordSchema,
     },
-    onSubmit: async ({ value }: { value: ForgotPasswordFormData }) => {
-      setError(null);
-
+    onSubmit: async ({ value, formApi }) => {
       try {
         const result = await authClient.requestPasswordReset({
           email: value.email,
@@ -36,12 +31,16 @@ const ForgotPasswordPage = () => {
         });
 
         if (result.error) {
-          setError(result.error.message || "Failed to send reset email");
+          formApi.fieldInfo.email.instance?.setErrorMap({
+            onSubmit: result.error.message || "Failed to send reset email",
+          });
         } else {
           setIsSubmitted(true);
         }
       } catch {
-        setError("An unexpected error occurred");
+        formApi.fieldInfo.email.instance?.setErrorMap({
+          onSubmit: "An unexpected error occurred",
+        });
       }
     },
   });
@@ -98,12 +97,6 @@ const ForgotPasswordPage = () => {
         }}
         className="space-y-6"
       >
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
         <form.Field name="email">
           {(field) => (
             <Input

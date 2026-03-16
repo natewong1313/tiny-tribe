@@ -2,7 +2,7 @@
 
 import { signIn } from "@/lib/auth-client";
 import { AuthLayout } from "../_components/auth-layout";
-import { useState } from "react";
+
 import Link from "vinext/shims/link";
 import { useRouter } from "vinext/shims/navigation";
 import { useForm } from "@tanstack/react-form";
@@ -15,11 +15,8 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-type SignInFormData = z.infer<typeof signInSchema>;
-
 const SignInPage = () => {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -29,9 +26,7 @@ const SignInPage = () => {
     validators: {
       onSubmit: signInSchema,
     },
-    onSubmit: async ({ value }: { value: SignInFormData }) => {
-      setError(null);
-
+    onSubmit: async ({ value, formApi }) => {
       try {
         const result = await signIn.email({
           email: value.email,
@@ -39,13 +34,17 @@ const SignInPage = () => {
         });
 
         if (result.error) {
-          setError(result.error.message || "Failed to sign in");
+          formApi.fieldInfo.email.instance?.setErrorMap({
+            onSubmit: result.error.message || "Failed to sign in",
+          });
         } else {
           router.push("/");
           router.refresh();
         }
       } catch {
-        setError("An unexpected error occurred");
+        formApi.fieldInfo.email.instance?.setErrorMap({
+          onSubmit: "An unexpected error occurred",
+        });
       }
     },
   });
@@ -63,12 +62,6 @@ const SignInPage = () => {
         }}
         className="space-y-6"
       >
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
         <form.Field name="email">
           {(field) => (
             <Input

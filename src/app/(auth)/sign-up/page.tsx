@@ -2,7 +2,7 @@
 
 import { signUp } from "@/lib/auth-client";
 import { User } from "@generated/client";
-import { useState } from "react";
+
 import Link from "vinext/shims/link";
 import { useRouter } from "vinext/shims/navigation";
 import { AuthLayout } from "../_components/auth-layout";
@@ -22,11 +22,8 @@ const signUpSchema = z
     path: ["confirmPassword"],
   });
 
-type SignUpFormData = z.infer<typeof signUpSchema>;
-
 const SignUpPage = () => {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -37,15 +34,16 @@ const SignUpPage = () => {
     validators: {
       onSubmit: signUpSchema,
     },
-    onSubmit: async ({ value }: { value: SignUpFormData }) => {
-      setError(null);
+    onSubmit: async ({ value, formApi }) => {
       const result = await signUp.email({
         email: value.email,
         name: "",
         password: value.password,
       });
       if (result.error) {
-        setError(result.error.message || "Failed to sign up");
+        formApi.fieldInfo.email.instance?.setErrorMap({
+          onSubmit: result.error.message || "Failed to sign up",
+        });
         return;
       }
       const { id, email } = result.data.user;
@@ -61,13 +59,17 @@ const SignUpPage = () => {
           updated_at: new Date(),
         });
         if (!createResult.ok) {
-          setError(createResult.message ?? "Failed to create user");
+          formApi.fieldInfo.email.instance?.setErrorMap({
+            onSubmit: createResult.message ?? "Failed to create user",
+          });
           return;
         }
         router.push("/");
         router.refresh();
       } catch (e) {
-        setError((e as Error).message);
+        formApi.fieldInfo.email.instance?.setErrorMap({
+          onSubmit: (e as Error).message,
+        });
       }
     },
   });
@@ -82,12 +84,6 @@ const SignUpPage = () => {
         }}
         className="space-y-6"
       >
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
         <form.Field name="email">
           {(field) => (
             <Input
