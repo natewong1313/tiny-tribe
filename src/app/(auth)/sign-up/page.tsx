@@ -1,7 +1,7 @@
 "use client";
 
-import { createUserProfile } from "./actions";
 import { signUp } from "@/lib/auth-client";
+import { User } from "@generated/client";
 import { useState } from "react";
 import Link from "vinext/shims/link";
 import { useRouter } from "vinext/shims/navigation";
@@ -39,32 +39,35 @@ const SignUpPage = () => {
     },
     onSubmit: async ({ value }: { value: SignUpFormData }) => {
       setError(null);
-
+      const result = await signUp.email({
+        email: value.email,
+        name: "",
+        password: value.password,
+      });
+      if (result.error) {
+        setError(result.error.message || "Failed to sign up");
+        return;
+      }
+      const { id, email } = result.data.user;
       try {
-        const result = await signUp.email({
-          email: value.email,
+        const createResult = await User.SAVE({
+          id,
+          email,
           name: "",
-          password: value.password,
+          username: "",
+          email_verified: false,
+          image: null,
+          created_at: new Date(),
+          updated_at: new Date(),
         });
-
-        if (result.error) {
-          setError(result.error.message || "Failed to sign up");
-        } else {
-          const createUserResult = await createUserProfile({
-            email: value.email,
-            id: result.data?.user?.id || "",
-          });
-
-          if (!createUserResult.ok) {
-            setError(createUserResult.error || "Failed to create user profile");
-            return;
-          }
-
-          router.push("/");
-          router.refresh();
+        if (!createResult.ok) {
+          setError(createResult.message ?? "Failed to create user");
+          return;
         }
-      } catch {
-        setError("An unexpected error occurred");
+        router.push("/");
+        router.refresh();
+      } catch (e) {
+        setError((e as Error).message);
       }
     },
   });
