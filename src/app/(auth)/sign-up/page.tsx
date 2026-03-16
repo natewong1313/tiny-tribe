@@ -2,247 +2,299 @@
 
 import { checkUsernameAvailability, createUserProfile } from "./actions";
 import { signUp } from "@/lib/auth-client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "vinext/shims/link";
 import { useRouter } from "vinext/shims/navigation";
 import { AuthLayout } from "../_components/auth-layout";
+import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
+import { Button } from "@/components/button";
+import { Input } from "@/components/input";
 
 const MIN_USERNAME_LENGTH = 3;
 const DEBOUNCE_DELAY = 300;
-const ZERO_LENGTH = 0;
+
+const signUpSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username must be at most 20 characters")
+      .regex(
+        /^[a-zA-Z0-9_-]+$/,
+        "Username can only contain letters, numbers, underscores, and hyphens",
+      ),
+    name: z.string().min(1, "Full name is required"),
+    email: z.email("Please enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type SignUpFormData = z.infer<typeof signUpSchema>;
 
 const SignUpPage = () => {
   const router = useRouter();
-  const usernameId = useId();
-  const nameId = useId();
-  const emailId = useId();
-  const passwordId = useId();
-  const confirmPasswordId = useId();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [username, setUsername] = useState("");
-  const [usernameStatus, setUsernameStatus] = useState<"checking" | "available" | "taken" | null>(
-    null,
-  );
+  const [usernameStatus, setUsernameStatus] = useState<
+    "checking" | "available" | "taken" | null
+  >(null);
   const [isUsernameValid, setIsUsernameValid] = useState(false);
 
-  useEffect(() => {
-    if (!username || username.length < MIN_USERNAME_LENGTH) {
-      setUsernameStatus(null);
-      setIsUsernameValid(false);
-      return;
-    }
-
-    setUsernameStatus("checking");
-    const timeoutId = setTimeout(async () => {
-      try {
-        const result = await checkUsernameAvailability(username);
-
-        if (result.ok && result.available) {
-          setUsernameStatus("available");
-          setIsUsernameValid(true);
-        } else {
-          setUsernameStatus("taken");
-          setIsUsernameValid(false);
-        }
-      } catch {
-        setUsernameStatus(null);
-        setIsUsernameValid(false);
+  const form = useForm({
+    defaultValues: {
+      username: "",
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validators: {
+      onSubmit: signUpSchema,
+    },
+    onSubmit: async ({ value }: { value: SignUpFormData }) => {
+      if (!isUsernameValid) {
+        setError("Please choose an available username");
+        return;
       }
-    }, DEBOUNCE_DELAY);
 
-    return () => clearTimeout(timeoutId);
-  }, [username]);
+      setError(null);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    if (!isUsernameValid) {
-      setError("Please choose an available username");
-      setIsLoading(false);
-      return;
-    }
-
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirmPassword") as string;
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const result = await signUp.email({
-        email,
-        name,
-        password,
-      });
-
-      if (result.error) {
-        setError(result.error.message || "Failed to sign up");
-      } else {
-        const createUserResult = await createUserProfile({
-          email,
-          id: result.data?.user?.id || "",
-          image: result.data?.user?.image ?? null,
-          name,
-          username,
+      try {
+        const result = await signUp.email({
+          email: value.email,
+          name: value.name,
+          password: value.password,
         });
 
-        if (!createUserResult.ok) {
-          setError(createUserResult.error || "Failed to create user profile");
-          return;
+        if (result.error) {
+          setError(result.error.message || "Failed to sign up");
+        } else {
+          const createUserResult = await createUserProfile({
+            email: value.email,
+            id: result.data?.user?.id || "",
+            image: result.data?.user?.image ?? null,
+            name: value.name,
+            username: value.username,
+          });
+
+          if (!createUserResult.ok) {
+            setError(createUserResult.error || "Failed to create user profile");
+            return;
+          }
+
+          router.push("/");
+          router.refresh();
         }
-
-        router.push("/");
-        router.refresh();
+      } catch {
+        setError("An unexpected error occurred");
       }
-    } catch {
-      setError("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
-  const buttonText = () => {
-    if (isLoading) {
-      return "Creating account...";
-    }
-    return "Create account";
-  };
+  // Handle username availability checking
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const checkUsername = () => {
+      const username = form.getFieldValue("username");
+
+      if (!username || username.length < MIN_USERNAME_LENGTH) {
+        setUsernameStatus(null);
+        setIsUsernameValid(false);
+        return;
+      }
+
+      // Validate username format first
+      const usernameResult = signUpSchema.shape.username.safeParse(username);
+      if (!usernameResult.success) {
+        setUsernameStatus(null);
+        setIsUsernameValid(false);
+        return;
+      }
+
+      setUsernameStatus("checking");
+      timeoutId = setTimeout(async () => {
+        try {
+          const result = await checkUsernameAvailability(username);
+
+          if (result.ok && result.available) {
+            setUsernameStatus("available");
+            setIsUsernameValid(true);
+          } else {
+            setUsernameStatus("taken");
+            setIsUsernameValid(false);
+          }
+        } catch {
+          setUsernameStatus(null);
+          setIsUsernameValid(false);
+        }
+      }, DEBOUNCE_DELAY);
+    };
+
+    // Subscribe to form value changes
+    const subscription = form.store.subscribe(() => {
+      checkUsername();
+    });
+
+    // Initial check
+    checkUsername();
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
+  }, [form.store, form]);
 
   return (
     <AuthLayout title="Create your account" subtitle="Join Tiny Tribe today">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
 
-        <div>
-          <label htmlFor={usernameId} className="block text-sm font-medium text-tt-green-700 mb-1">
-            Username
-          </label>
-          <input
-            id={usernameId}
-            name="username"
-            type="text"
-            autoComplete="username"
-            required
-            minLength={3}
-            maxLength={20}
-            pattern="^[a-zA-Z0-9_-]+$"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
-            placeholder="johndoe"
-          />
-          <div className="mt-1 flex items-center gap-2">
-            {"checking" === usernameStatus && (
-              <span className="text-sm text-gray-500">Checking availability...</span>
-            )}
-            {"available" === usernameStatus && (
-              <span className="text-sm text-green-600">Username available</span>
-            )}
-            {"taken" === usernameStatus && (
-              <span className="text-sm text-red-600">Username already taken</span>
-            )}
-            {null === usernameStatus &&
-              username.length > ZERO_LENGTH &&
-              username.length < MIN_USERNAME_LENGTH && (
-                <span className="text-sm text-gray-500">
-                  Username must be at least {MIN_USERNAME_LENGTH} characters
-                </span>
-              )}
-          </div>
-          <p className="mt-1 text-xs text-gray-500">
-            3-20 characters, letters, numbers, underscores, and hyphens only
-          </p>
-        </div>
+        <form.Field name="username">
+          {(field) => (
+            <div>
+              <Input
+                label="Username"
+                name={field.name}
+                type="text"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                autoComplete="username"
+                placeholder="johndoe"
+                errors={field.state.meta.errors}
+              />
+              <div className="mt-1 flex items-center gap-2">
+                {"checking" === usernameStatus && (
+                  <span className="text-sm text-gray-500">
+                    Checking availability...
+                  </span>
+                )}
+                {"available" === usernameStatus && (
+                  <span className="text-sm text-green-600">
+                    Username available
+                  </span>
+                )}
+                {"taken" === usernameStatus && (
+                  <span className="text-sm text-red-600">
+                    Username already taken
+                  </span>
+                )}
+                {null === usernameStatus &&
+                  field.state.value.length > 0 &&
+                  field.state.value.length < MIN_USERNAME_LENGTH && (
+                    <span className="text-sm text-gray-500">
+                      Username must be at least {MIN_USERNAME_LENGTH} characters
+                    </span>
+                  )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                3-20 characters, letters, numbers, underscores, and hyphens only
+              </p>
+            </div>
+          )}
+        </form.Field>
 
-        <div>
-          <label htmlFor={nameId} className="block text-sm font-medium text-tt-green-700 mb-1">
-            Full name
-          </label>
-          <input
-            id={nameId}
-            name="name"
-            type="text"
-            autoComplete="name"
-            required
-            className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
-            placeholder="John Doe"
-          />
-        </div>
+        <form.Field name="name">
+          {(field) => (
+            <Input
+              label="Full name"
+              name={field.name}
+              type="text"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              autoComplete="name"
+              placeholder="John Doe"
+              errors={field.state.meta.errors}
+            />
+          )}
+        </form.Field>
 
-        <div>
-          <label htmlFor={emailId} className="block text-sm font-medium text-tt-green-700 mb-1">
-            Email address
-          </label>
-          <input
-            id={emailId}
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
-            placeholder="lebron@gmail.com"
-          />
-        </div>
+        <form.Field name="email">
+          {(field) => (
+            <Input
+              label="Email address"
+              name={field.name}
+              type="email"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              autoComplete="email"
+              placeholder="lebron@gmail.com"
+              errors={field.state.meta.errors}
+            />
+          )}
+        </form.Field>
 
-        <div>
-          <label htmlFor={passwordId} className="block text-sm font-medium text-tt-green-700 mb-1">
-            Password
-          </label>
-          <input
-            id={passwordId}
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
-            placeholder="Create a password"
-          />
-          <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
-        </div>
+        <form.Field name="password">
+          {(field) => (
+            <Input
+              label="Password"
+              name={field.name}
+              type="password"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              autoComplete="new-password"
+              placeholder="Create a password"
+              errors={field.state.meta.errors}
+              helperText="Must be at least 8 characters"
+            />
+          )}
+        </form.Field>
 
-        <div>
-          <label
-            htmlFor={confirmPasswordId}
-            className="block text-sm font-medium text-tt-green-700 mb-1"
-          >
-            Confirm password
-          </label>
-          <input
-            id={confirmPasswordId}
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            required
-            className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
-            placeholder="Confirm your password"
-          />
-        </div>
+        <form.Field name="confirmPassword">
+          {(field) => (
+            <Input
+              label="Confirm password"
+              name={field.name}
+              type="password"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              autoComplete="new-password"
+              placeholder="Confirm your password"
+              errors={field.state.meta.errors}
+            />
+          )}
+        </form.Field>
 
-        <button
-          type="submit"
-          disabled={isLoading || !isUsernameValid}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tt-green-600 hover:bg-tt-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tt-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
-          {buttonText()}
-        </button>
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              disabled={!canSubmit || isSubmitting || !isUsernameValid}
+              isLoading={isSubmitting}
+            >
+              {isSubmitting ? "Creating account..." : "Create account"}
+            </Button>
+          )}
+        </form.Subscribe>
 
         <p className="text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link href="/sign-in" className="font-medium text-tt-green-600 hover:underline">
+          <Link
+            href="/sign-in"
+            className="font-medium text-tt-green-600 hover:underline"
+          >
             Sign in
           </Link>
         </p>
