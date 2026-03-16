@@ -1,7 +1,9 @@
 "use server";
 
+import { User } from "@/data/models.cloesce";
 import { getAuth } from "@/lib/auth-server";
-import { User } from "@generated/client";
+import { getCloesceOrm } from "@/lib/cloesce-runtime";
+import { env } from "cloudflare:workers";
 import { headers } from "vinext/shims/headers";
 
 interface HasOnboardedResult {
@@ -19,11 +21,12 @@ export const hasOnboarded = async (): Promise<HasOnboardedResult> => {
     return { hasOnboarded: false, unauthorized: true };
   }
 
-  const { data: user } = await User.GET(session.user.id);
+  const orm = await getCloesceOrm(env);
+  const user = await orm.get(User, { primaryKey: { id: session.user.id } });
   if (!user) {
     return {
       hasOnboarded: false,
-      unauthorized: true,
+      unauthorized: false,
       error: "User does not exist",
     };
   }
