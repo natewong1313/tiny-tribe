@@ -12,11 +12,11 @@ export class Env {
 export class User {
   @PrimaryKey
   id!: string;
-  name!: string;
+  name?: string;
   email!: string;
   email_verified!: boolean;
   image!: string | null;
-  username!: string;
+  username?: string;
   created_at!: Date;
   updated_at!: Date;
 

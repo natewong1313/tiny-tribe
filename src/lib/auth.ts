@@ -1,6 +1,7 @@
 import { D1Database } from "@cloudflare/workers-types";
 import { betterAuth } from "better-auth";
 import { cloesceBetterAuthAdapter } from "@/lib/cloesce-better-auth-adapter";
+import { nextCookies } from "better-auth/next-js";
 
 interface Env {
   BETTER_AUTH_SECRET: string;
@@ -66,6 +67,7 @@ export const createAuth = (env: Env) =>
       },
       modelName: "BetterAuthVerification",
     },
+    plugins: [nextCookies()],
   });
 
 export type Auth = ReturnType<typeof createAuth>;

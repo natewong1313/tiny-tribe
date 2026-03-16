@@ -7,9 +7,6 @@ import { getCloesceOrm } from "@/lib/cloesce-runtime";
 interface CreateUserInput {
   email: string;
   id: string;
-  image?: string | null;
-  name: string;
-  username: string;
 }
 
 interface CreateUserResult {
@@ -17,17 +14,12 @@ interface CreateUserResult {
   ok: boolean;
 }
 
-const createUserProfile = async (input: CreateUserInput): Promise<CreateUserResult> => {
-  if (!input.id || !input.name || !input.email || !input.username) {
+const createUserProfile = async (
+  input: CreateUserInput,
+): Promise<CreateUserResult> => {
+  if (!input.id || !input.email) {
     return {
-      error: "id, name, email, and username are required",
-      ok: false,
-    };
-  }
-
-  if (!/^[a-zA-Z0-9_-]+$/.test(input.username)) {
-    return {
-      error: "Invalid username format",
+      error: "id and email are required",
       ok: false,
     };
   }
@@ -43,10 +35,10 @@ const createUserProfile = async (input: CreateUserInput): Promise<CreateUserResu
         email: input.email,
         email_verified: false,
         id: input.id,
-        image: input.image ?? null,
-        name: input.name,
+        image: null,
+        name: "",
         updated_at: now,
-        username: input.username,
+        username: "",
       },
       {},
     );
@@ -68,7 +60,9 @@ interface CheckUsernameResult {
   ok: boolean;
 }
 
-const checkUsernameAvailability = async (username: string): Promise<CheckUsernameResult> => {
+const checkUsernameAvailability = async (
+  username: string,
+): Promise<CheckUsernameResult> => {
   if (!username) {
     return { available: false, error: "Username is required", ok: false };
   }
@@ -81,7 +75,9 @@ const checkUsernameAvailability = async (username: string): Promise<CheckUsernam
     const orm = await getCloesceOrm(env);
     const normalized = username.toLowerCase();
     const users = await orm.list(User, { include: {} });
-    const exists = users.some((user) => user.username.toLowerCase() === normalized);
+    const exists = users.some(
+      (user) => user.username?.toLowerCase() === normalized && user.username,
+    );
 
     return {
       available: !exists,
