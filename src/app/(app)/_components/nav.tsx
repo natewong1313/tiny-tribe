@@ -15,6 +15,7 @@ import Link from "vinext/shims/link";
 import { usePathname } from "vinext/shims/navigation";
 
 interface NavButtonProps {
+  title: string;
   href: string;
   icon: RemixiconComponentType;
   isSelected?: boolean;
@@ -36,11 +37,12 @@ const NavButton = (props: NavButtonProps) => {
     <Link
       href={props.href}
       className={cn(
-        "items-center justify-center flex px-2.5 py-2.5",
+        "items-center justify-center px-2.5 py-2.5 flex flex-col",
         className,
       )}
     >
-      <Icon size={24} />
+      <Icon size={20} />
+      <span className="text-xs mt-1">{props.title}</span>
     </Link>
   );
 };
@@ -51,24 +53,28 @@ const Nav = () => {
   return (
     <div className="px-6 w-full bg-stone-300 flex items-center justify-between border-t border-stone-400/50">
       <NavButton
+        title="Home"
         href="/home"
         icon={RiHome2Line}
         selectedIcon={RiHome2Fill}
         isSelected={pathname === "/home"}
       />
       <NavButton
+        title="Search"
         href="/explore"
         icon={RiSearchLine}
         selectedIcon={RiSearchLine}
         isSelected={pathname === "/explore"}
       />
       <NavButton
+        title="Create"
         href="/create"
         icon={RiAddLargeLine}
         selectedIcon={RiAddLargeFill}
         isSelected={pathname === "/create"}
       />
       <NavButton
+        title="You"
         href="/profile"
         icon={RiAccountCircleLine}
         selectedIcon={RiAccountCircleFill}

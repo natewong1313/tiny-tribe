@@ -64,6 +64,10 @@ export class Post {
   updated_at!: Date;
 
   media!: PostMedia[];
+
+  static fromJson(data: any): Post {
+    return Object.assign(new Post(), data);
+  }
 }
 
 @Model("db")
@@ -81,6 +85,10 @@ export class PostMedia {
 
   created_at!: Date;
   updated_at!: Date;
+
+  static fromJson(data: any): PostMedia {
+    return Object.assign(new PostMedia(), data);
+  }
 }
 
 @Model("db")

@@ -1,5 +1,6 @@
 import { getCloesceApp } from "@/lib/cloesce-runtime";
 import { getAuth } from "@/lib/auth-server";
+import { validateUsername } from "@/lib/username";
 import type { CloesceApp } from "cloesce/backend";
 import { env } from "cloudflare:workers";
 
@@ -181,6 +182,22 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
       if (typeof id !== "string" || id !== session.user.id) {
         return forbidden();
       }
+
+      if (model.username !== undefined) {
+        if (typeof model.username !== "string") {
+          return badRequest();
+        }
+
+        if (model.username.length > 0) {
+          const validation = validateUsername(model.username);
+          if (!validation.valid) {
+            return new Response(validation.error ?? "Invalid username", {
+              status: 400,
+            });
+          }
+        }
+      }
+
       return null;
     }
 
@@ -266,13 +283,25 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
 };
 
 const handler = async (request: Request): Promise<Response> => {
+  console.log("[Cloesce] Handling request:", request.method, request.url);
+  
   const authorizationError = await authorizeCloesceRequest(request);
   if (authorizationError) {
+    console.log("[Cloesce] Authorization failed:", authorizationError.status);
     return authorizationError;
   }
 
+  console.log("[Cloesce] Authorization passed, running app...");
   const app = await getApp();
-  return app.run(request, env);
+  const result = await app.run(request, env);
+  
+  if (!result.ok) {
+    const body = await result.text();
+    console.log("[Cloesce] App error:", result.status, body);
+    return new Response(body, { status: result.status, headers: result.headers });
+  }
+  
+  return result;
 };
 
 export const DELETE = handler;

@@ -1,3 +1,4 @@
+import { cn } from "@/lib/cn";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -29,7 +30,7 @@ export const Button = ({
     <button
       type="button"
       disabled={isLoading || disabled}
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+      className={cn(baseStyles, variants[variant], className)}
       {...props}
     >
       {isLoading ? (

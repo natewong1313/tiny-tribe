@@ -4,7 +4,7 @@ const config = defineConfig({
   migrationsPath: "./migrations",
   projectName: "tiny-tribe",
   srcPaths: ["./src/data"],
-  workersUrl: "http://localhost:3000/api/cloesce",
+  workersUrl: process.env.CLOESCE_WORKER_URL,
 });
 
 export default config;
