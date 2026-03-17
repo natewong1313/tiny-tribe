@@ -1,16 +1,17 @@
-import { getCloesceApp } from "@/lib/cloesce-runtime";
+import cidl from "@generated/cidl.json";
 import { getAuth } from "@/lib/auth-server";
+import { getCloesceApp } from "@/lib/cloesce-runtime";
 import { validateUsername } from "@/lib/username";
 import type { CloesceApp } from "cloesce/backend";
 import { env } from "cloudflare:workers";
 
-const getApp = async (): Promise<CloesceApp> => getCloesceApp();
-
-const MODEL_METHOD_HTTP_VERB: Record<string, string> = {
-  GET: "GET",
-  LIST: "GET",
-  SAVE: "POST",
-};
+interface RouteInfo {
+  kind: "model" | "service";
+  methodName: string;
+  namespace: string;
+  keys: string[];
+  expectedVerb: string;
+}
 
 const PROTECTED_MODELS = new Set([
   "BetterAuthAccount",
@@ -22,16 +23,45 @@ const PROTECTED_MODELS = new Set([
 const MODEL_ALLOWED_METHODS: Record<string, Set<string>> = {
   Post: new Set(["GET", "SAVE"]),
   PostMedia: new Set(["GET", "SAVE"]),
-  User: new Set(["GET", "SAVE", "DOWNLOADPHOTO", "UPLOADPHOTO"]),
+  User: new Set(["GET", "SAVE", "downloadPhoto", "uploadPhoto"]),
 };
 
-interface RouteInfo {
-  method: string;
-  model: string;
-  keys: string[];
-}
+const SERVICE_ALLOWED_METHODS: Record<string, Set<string>> = {
+  UserAppService: new Set(["hasOnboarded", "isUsernameAvailable"]),
+};
 
-const parseModelAndMethod = (request: Request): RouteInfo | null => {
+const badRequest = () => new Response("Bad Request", { status: 400 });
+const unauthorized = () => new Response("Unauthorized", { status: 401 });
+const forbidden = () => new Response("Forbidden", { status: 403 });
+const methodNotAllowed = () => new Response("Method Not Allowed", { status: 405 });
+
+const getApp = async (): Promise<CloesceApp> => getCloesceApp();
+
+const findMethod = (
+  methods: Record<string, { http_verb?: string }>,
+  requestedMethodName: string,
+): { methodName: string; expectedVerb: string } | null => {
+  const exact = methods[requestedMethodName];
+  if (exact?.http_verb) {
+    return {
+      methodName: requestedMethodName,
+      expectedVerb: exact.http_verb.toUpperCase(),
+    };
+  }
+
+  const uppercase = requestedMethodName.toUpperCase();
+  const upper = methods[uppercase];
+  if (upper?.http_verb) {
+    return {
+      methodName: uppercase,
+      expectedVerb: upper.http_verb.toUpperCase(),
+    };
+  }
+
+  return null;
+};
+
+const parseRoute = (request: Request): RouteInfo | null => {
   const { pathname } = new URL(request.url);
   const prefix = "/api/cloesce/";
   if (!pathname.startsWith(prefix)) {
@@ -43,25 +73,52 @@ const parseModelAndMethod = (request: Request): RouteInfo | null => {
     return null;
   }
 
-  const model = segments[0];
-  const method = segments.length === 2 ? segments[1] : segments[segments.length - 1];
-  const keys = segments.length > 2 ? segments.slice(1, -1).map((part) => decodeURIComponent(part)) : [];
+  const namespace = segments[0];
+  const requestedMethodName = segments[segments.length - 1];
+  const keys = segments.length > 2 ? segments.slice(1, -1).map(decodeURIComponent) : [];
+  if (!namespace || !requestedMethodName) {
+    return null;
+  }
 
-  if (!model || !method) {
+  const ast = cidl as {
+    models: Record<string, { methods: Record<string, { http_verb?: string }> }>;
+    services: Record<string, { methods: Record<string, { http_verb?: string }> }>;
+  };
+
+  const model = ast.models[namespace];
+  if (model) {
+    const found = findMethod(model.methods, requestedMethodName);
+    if (!found) {
+      return null;
+    }
+
+    return {
+      kind: "model",
+      methodName: found.methodName,
+      namespace,
+      keys,
+      expectedVerb: found.expectedVerb,
+    };
+  }
+
+  const service = ast.services[namespace];
+  if (!service) {
+    return null;
+  }
+
+  const found = findMethod(service.methods, requestedMethodName);
+  if (!found) {
     return null;
   }
 
   return {
-    method: method.toUpperCase(),
-    model,
+    kind: "service",
+    methodName: found.methodName,
+    namespace,
     keys,
+    expectedVerb: found.expectedVerb,
   };
 };
-
-const forbidden = () => new Response("Forbidden", { status: 403 });
-const unauthorized = () => new Response("Unauthorized", { status: 401 });
-const badRequest = () => new Response("Bad Request", { status: 400 });
-const methodNotAllowed = () => new Response("Method Not Allowed", { status: 405 });
 
 const isPostOwnedByUser = async (postId: string, userId: string): Promise<boolean> => {
   const postResult = await env.db
@@ -72,10 +129,7 @@ const isPostOwnedByUser = async (postId: string, userId: string): Promise<boolea
   return typeof ownerId === "string" && ownerId === userId;
 };
 
-const isPostMediaOwnedByUser = async (
-  postMediaId: string,
-  userId: string,
-): Promise<boolean> => {
+const isPostMediaOwnedByUser = async (postMediaId: string, userId: string): Promise<boolean> => {
   const mediaResult = await env.db
     .prepare(
       'SELECT "Post"."userId" as "userId" FROM "PostMedia" INNER JOIN "Post" ON "Post"."id" = "PostMedia"."postId" WHERE "PostMedia"."id" = ? LIMIT 1',
@@ -106,69 +160,47 @@ const parseModelFromSaveRequest = async (request: Request): Promise<Record<strin
   return model as Record<string, unknown>;
 };
 
-const CUSTOM_METHOD_HTTP_VERB: Record<string, string> = {
-  DOWNLOADPHOTO: "GET",
-  UPLOADPHOTO: "PUT",
-};
-
-const authorizeCloesceRequest = async (request: Request): Promise<Response | null> => {
-  if (request.method === "OPTIONS") {
-    return null;
-  }
-
-  const routeInfo = parseModelAndMethod(request);
-  if (!routeInfo) {
-    return badRequest();
-  }
-
-  const expectedVerb = MODEL_METHOD_HTTP_VERB[routeInfo.method] ?? CUSTOM_METHOD_HTTP_VERB[routeInfo.method];
-  if (!expectedVerb || expectedVerb !== request.method.toUpperCase()) {
-    return methodNotAllowed();
-  }
-
-  if (PROTECTED_MODELS.has(routeInfo.model)) {
+const authorizeModelRequest = async (
+  request: Request,
+  route: RouteInfo,
+  userId: string,
+): Promise<Response | null> => {
+  if (PROTECTED_MODELS.has(route.namespace)) {
     return forbidden();
   }
 
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id) {
-    return unauthorized();
-  }
-
-  const allowedMethods = MODEL_ALLOWED_METHODS[routeInfo.model];
-  if (!allowedMethods || !allowedMethods.has(routeInfo.method)) {
+  const allowedMethods = MODEL_ALLOWED_METHODS[route.namespace];
+  if (!allowedMethods || !allowedMethods.has(route.methodName)) {
     return forbidden();
   }
 
-  if (routeInfo.method === "GET") {
-    if (routeInfo.keys.length > 0) {
+  if (route.methodName === "GET") {
+    if (route.keys.length > 0) {
       return badRequest();
     }
 
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const id = new URL(request.url).searchParams.get("id");
     if (!id) {
       return badRequest();
     }
 
-    if (routeInfo.model === "User" && id !== session.user.id) {
+    if (route.namespace === "User" && id !== userId) {
       return forbidden();
     }
 
-    if (routeInfo.model === "Post" && !(await isPostOwnedByUser(id, session.user.id))) {
+    if (route.namespace === "Post" && !(await isPostOwnedByUser(id, userId))) {
       return forbidden();
     }
 
-    if (routeInfo.model === "PostMedia" && !(await isPostMediaOwnedByUser(id, session.user.id))) {
+    if (route.namespace === "PostMedia" && !(await isPostMediaOwnedByUser(id, userId))) {
       return forbidden();
     }
 
     return null;
   }
 
-  if (routeInfo.method === "SAVE") {
-    if (routeInfo.keys.length > 0) {
+  if (route.methodName === "SAVE") {
+    if (route.keys.length > 0) {
       return badRequest();
     }
 
@@ -177,9 +209,9 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
       return badRequest();
     }
 
-    if (routeInfo.model === "User") {
+    if (route.namespace === "User") {
       const id = model.id;
-      if (typeof id !== "string" || id !== session.user.id) {
+      if (typeof id !== "string" || id !== userId) {
         return forbidden();
       }
 
@@ -191,9 +223,7 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
         if (model.username.length > 0) {
           const validation = validateUsername(model.username);
           if (!validation.valid) {
-            return new Response(validation.error ?? "Invalid username", {
-              status: 400,
-            });
+            return new Response(validation.error ?? "Invalid username", { status: 400 });
           }
         }
       }
@@ -201,35 +231,35 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
       return null;
     }
 
-    if (routeInfo.model === "Post") {
+    if (route.namespace === "Post") {
       const postId = model.id;
       if (postId !== undefined && typeof postId !== "string") {
         return badRequest();
       }
 
-      if (typeof postId === "string" && !(await isPostOwnedByUser(postId, session.user.id))) {
+      if (typeof postId === "string" && !(await isPostOwnedByUser(postId, userId))) {
         return forbidden();
       }
 
       const postUserId = model.userId;
-      if (postUserId !== undefined && (typeof postUserId !== "string" || postUserId !== session.user.id)) {
+      if (postUserId !== undefined && (typeof postUserId !== "string" || postUserId !== userId)) {
         return forbidden();
       }
 
-      if (postId === undefined && postUserId !== session.user.id) {
+      if (postId === undefined && postUserId !== userId) {
         return forbidden();
       }
 
       return null;
     }
 
-    if (routeInfo.model === "PostMedia") {
+    if (route.namespace === "PostMedia") {
       const postMediaId = model.id;
       if (postMediaId !== undefined && typeof postMediaId !== "string") {
         return badRequest();
       }
 
-      if (typeof postMediaId === "string" && !(await isPostMediaOwnedByUser(postMediaId, session.user.id))) {
+      if (typeof postMediaId === "string" && !(await isPostMediaOwnedByUser(postMediaId, userId))) {
         return forbidden();
       }
 
@@ -238,7 +268,6 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
         if (typeof postMediaId === "string") {
           return null;
         }
-
         return badRequest();
       }
 
@@ -246,33 +275,22 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
         return badRequest();
       }
 
-      if (!(await isPostOwnedByUser(postId, session.user.id))) {
+      if (!(await isPostOwnedByUser(postId, userId))) {
         return forbidden();
       }
+
       return null;
     }
 
     return forbidden();
   }
 
-  if (routeInfo.method === "UPLOADPHOTO") {
-    if (routeInfo.model !== "User") {
+  if (route.methodName === "uploadPhoto" || route.methodName === "downloadPhoto") {
+    if (route.namespace !== "User") {
       return forbidden();
     }
 
-    if (routeInfo.keys.length !== 1 || routeInfo.keys[0] !== session.user.id) {
-      return forbidden();
-    }
-
-    return null;
-  }
-
-  if (routeInfo.method === "DOWNLOADPHOTO") {
-    if (routeInfo.model !== "User") {
-      return forbidden();
-    }
-
-    if (routeInfo.keys.length !== 1 || routeInfo.keys[0] !== session.user.id) {
+    if (route.keys.length !== 1 || route.keys[0] !== userId) {
       return forbidden();
     }
 
@@ -282,25 +300,60 @@ const authorizeCloesceRequest = async (request: Request): Promise<Response | nul
   return null;
 };
 
+const authorizeServiceRequest = (route: RouteInfo): Response | null => {
+  if (route.keys.length > 0) {
+    return badRequest();
+  }
+
+  const allowedMethods = SERVICE_ALLOWED_METHODS[route.namespace];
+  if (!allowedMethods || !allowedMethods.has(route.methodName)) {
+    return forbidden();
+  }
+
+  return null;
+};
+
+const authorizeCloesceRequest = async (request: Request): Promise<Response | null> => {
+  if (request.method === "OPTIONS") {
+    return null;
+  }
+
+  const route = parseRoute(request);
+  if (!route) {
+    return badRequest();
+  }
+
+  if (request.method.toUpperCase() !== route.expectedVerb) {
+    return methodNotAllowed();
+  }
+
+  const auth = getAuth();
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session?.user?.id;
+  if (!userId) {
+    return unauthorized();
+  }
+
+  if (route.kind === "service") {
+    return authorizeServiceRequest(route);
+  }
+
+  return authorizeModelRequest(request, route, userId);
+};
+
 const handler = async (request: Request): Promise<Response> => {
-  console.log("[Cloesce] Handling request:", request.method, request.url);
-  
   const authorizationError = await authorizeCloesceRequest(request);
   if (authorizationError) {
-    console.log("[Cloesce] Authorization failed:", authorizationError.status);
     return authorizationError;
   }
 
-  console.log("[Cloesce] Authorization passed, running app...");
   const app = await getApp();
   const result = await app.run(request, env);
-  
   if (!result.ok) {
     const body = await result.text();
-    console.log("[Cloesce] App error:", result.status, body);
     return new Response(body, { status: result.status, headers: result.headers });
   }
-  
+
   return result;
 };
 

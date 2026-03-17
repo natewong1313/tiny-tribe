@@ -8,15 +8,9 @@ import {
   PrimaryKey,
   Put,
   R2,
-  WranglerEnv,
 } from "cloesce/backend";
-import { D1Database, R2Bucket, R2ObjectBody, ReadableStream } from "@cloudflare/workers-types";
-
-@WranglerEnv
-export class Env {
-  db!: D1Database;
-  bucket!: R2Bucket;
-}
+import { R2ObjectBody, ReadableStream } from "@cloudflare/workers-types";
+import { Env } from "./main.cloesce";
 
 @Model("db")
 @Crud("SAVE", "GET", "LIST")

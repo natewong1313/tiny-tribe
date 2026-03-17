@@ -1,12 +1,7 @@
 "use server";
 
-import { User } from "@/data/models.cloesce";
-import { getAuth } from "@/lib/auth-server";
-import { getCloesceOrm } from "@/lib/cloesce-runtime";
-import { validateUsername } from "@/lib/username";
-import type { DataSource } from "cloesce/backend";
-import { env } from "cloudflare:workers";
-import { headers } from "vinext/shims/headers";
+import { fetchWithSession } from "@/lib/fetch";
+import { UserAppService } from "@generated/client";
 
 interface UsernameAvailabilityResult {
   available: boolean;
@@ -16,39 +11,19 @@ interface UsernameAvailabilityResult {
 export const isUsernameAvailable = async (
   username: string,
 ): Promise<UsernameAvailabilityResult> => {
-  const validation = validateUsername(username);
-  if (!validation.valid) {
-    return { available: false, error: validation.error };
+  const result = await UserAppService.isUsernameAvailable(
+    username,
+    fetchWithSession,
+  );
+
+  if (!result.ok) {
+    return {
+      available: false,
+      error: result.message || "Failed to check username availability",
+    };
   }
 
-  const auth = getAuth();
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user?.id) {
-    return { available: false, error: "Unauthorized" };
-  }
-
-  const orm = await getCloesceOrm(env);
-  const usernameLookupSource: DataSource<User> = {
-    includeTree: {},
-    list: (joined) => `
-      WITH cte AS (${joined()})
-      SELECT * FROM cte
-      WHERE username = ?
-        AND id != ?
-      LIMIT ?
-    `,
-    listParams: ["Offset", "LastSeen", "Limit"],
+  return {
+    available: Boolean(result.data),
   };
-
-  const existingUsers = await orm.list(User, {
-    include: usernameLookupSource,
-    lastSeen: { id: session.user.id },
-    limit: 1,
-    offset: username as unknown as number,
-  });
-
-  return { available: !existingUsers.length };
 };

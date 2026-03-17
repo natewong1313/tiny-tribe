@@ -3,11 +3,12 @@ import {
   BetterAuthSession,
   BetterAuthUser,
   BetterAuthVerification,
-  Env as CloesceEnv,
   User,
   Post,
   PostMedia,
 } from "@/data/models.cloesce";
+import { Env as CloesceEnv } from "@/data/main.cloesce";
+import { UserAppService } from "@/data/services.cloesce";
 import { CloesceApp, Orm } from "cloesce/backend";
 import cidl from "../../.generated/cidl.json";
 
@@ -24,6 +25,7 @@ const constructorRegistry: ConstructorRegistry = {
   User,
   Post,
   PostMedia,
+  UserAppService,
 };
 
 let appPromise: Promise<CloesceApp> | null = null;

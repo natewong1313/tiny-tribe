@@ -1,10 +1,7 @@
 "use server";
 
-import { User } from "@/data/models.cloesce";
-import { getAuth } from "@/lib/auth-server";
-import { getCloesceOrm } from "@/lib/cloesce-runtime";
-import { env } from "cloudflare:workers";
-import { headers } from "vinext/shims/headers";
+import { fetchWithSession } from "@/lib/fetch";
+import { UserAppService } from "@generated/client";
 
 interface HasOnboardedResult {
   hasOnboarded: boolean;
@@ -13,24 +10,19 @@ interface HasOnboardedResult {
 }
 
 export const hasOnboarded = async (): Promise<HasOnboardedResult> => {
-  const auth = getAuth();
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
-    return { hasOnboarded: false, unauthorized: true };
-  }
+  const result = await UserAppService.hasOnboarded(fetchWithSession);
 
-  const orm = await getCloesceOrm(env);
-  const user = await orm.get(User, { primaryKey: { id: session.user.id } });
-  if (!user) {
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { hasOnboarded: false, unauthorized: true };
+    }
+
     return {
       hasOnboarded: false,
       unauthorized: false,
-      error: "User does not exist",
+      error: result.message || "Failed to check onboarding",
     };
   }
 
-  const needsOnboarding = !user.name || !user.username || !user.photo;
-  return { hasOnboarded: !needsOnboarding };
+  return { hasOnboarded: Boolean(result.data) };
 };

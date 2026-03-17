@@ -78,7 +78,7 @@ export default function CreatePage() {
     onSubmit: async ({ value, formApi }) => {
       console.log("Session:", session);
       console.log("Session user ID:", session?.user?.id);
-      
+
       if (!session?.user?.id) {
         formApi.fieldInfo.text_content.instance?.setErrorMap({
           onSubmit: "You must be logged in to create a post",
@@ -119,7 +119,7 @@ export default function CreatePage() {
             updated_at: now,
           };
           console.log("Sending PostMedia data:", mediaData);
-          
+
           const mediaResult = await PostMedia.SAVE(mediaData);
           console.log("PostMedia result:", mediaResult);
 
@@ -140,7 +140,7 @@ export default function CreatePage() {
   });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       <div className="bg-stone-300 border-b border-stone-400/50 p-4 flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-800">Create Post</h1>
         <form.Subscribe
@@ -221,7 +221,7 @@ export default function CreatePage() {
           </div>
         )}
 
-        <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="mt-6 pt-4 border-t border-stone-300">
           <div className="flex gap-2">
             <button
               onClick={handlePhotoClick}
