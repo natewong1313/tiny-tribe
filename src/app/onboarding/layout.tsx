@@ -1,17 +1,22 @@
-import { hasOnboarded } from "@/actions/onboarding";
 import { redirect } from "vinext/shims/navigation";
+import { UserAppService } from "@generated/client";
+import { fetchWithSession } from "@/lib/fetch";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const onboardingResult = await hasOnboarded();
+  const result = await UserAppService.hasOnboarded(fetchWithSession);
 
-  if (onboardingResult.unauthorized) {
-    return redirect("/sign-in");
+  if (!result.ok) {
+    if (result.status === 401) {
+      return redirect("/sign-in");
+    }
   }
-  if (onboardingResult.hasOnboarded) {
+
+  const hasOnboarded = Boolean(result.data);
+  if (hasOnboarded) {
     return redirect("/home");
   }
 

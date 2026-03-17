@@ -14,7 +14,7 @@ import "./filepond-custom.css";
 import { useSession } from "@/lib/auth-client";
 import { User } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
-import { isUsernameAvailable } from "@/actions/username";
+import { isUsernameAvailable } from "./actions";
 
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
 

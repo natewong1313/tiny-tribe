@@ -1,16 +1,11 @@
 "use server";
 
-import { fetchWithSession } from "@/lib/fetch";
 import { UserAppService } from "@generated/client";
-
-interface UsernameAvailabilityResult {
-  available: boolean;
-  error?: string;
-}
+import { fetchWithSession } from "@/lib/fetch";
 
 export const isUsernameAvailable = async (
   username: string,
-): Promise<UsernameAvailabilityResult> => {
+): Promise<{ available: boolean; error?: string }> => {
   const result = await UserAppService.isUsernameAvailable(
     username,
     fetchWithSession,
