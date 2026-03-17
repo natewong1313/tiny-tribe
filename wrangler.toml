@@ -15,3 +15,7 @@ migrations_dir = "migrations"
 [[r2_buckets]]
 binding = "bucket"
 bucket_name = "tiny-tribe-bucket"
+
+[vars]
+BETTER_AUTH_SECRET = "default_string"
+BETTER_AUTH_URL = "default_string"

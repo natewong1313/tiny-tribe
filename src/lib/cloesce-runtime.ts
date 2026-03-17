@@ -8,7 +8,7 @@ import {
   PostMedia,
 } from "@/data/models.cloesce";
 import { Env as CloesceEnv } from "@/data/main.cloesce";
-import { UserAppService } from "@/data/services.cloesce";
+import { PostAppService, UserAppService } from "@/data/services.cloesce";
 import { CloesceApp, Orm } from "cloesce/backend";
 import cidl from "../../.generated/cidl.json";
 
@@ -25,6 +25,7 @@ const constructorRegistry: ConstructorRegistry = {
   User,
   Post,
   PostMedia,
+  PostAppService,
   UserAppService,
 };
 
