@@ -12,9 +12,8 @@ import { Input } from "@/components/input";
 import { useId, useRef, useState } from "react";
 import "./filepond-custom.css";
 import { useSession } from "@/lib/auth-client";
-import { User } from "@generated/client";
+import { User, UserAppService } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
-import { isUsernameAvailable } from "./actions";
 
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
 
@@ -29,44 +28,52 @@ const onboardingSchema = z.object({
   photo: z.string().min(1, "Profile photo is required"),
 });
 
+type UsernameCheckState = {
+  status: "idle" | "checking" | "available" | "unavailable";
+  error: string | null;
+};
+
 const FormPage = () => {
   const router = useRouter();
   const photoLabelId = useId();
   const { data: session } = useSession();
   const [files, setFiles] = useState<File[]>([]);
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [usernameAvailabilityError, setUsernameAvailabilityError] = useState<
-    string | null
-  >(null);
-  const [isUsernameAvailableNow, setIsUsernameAvailableNow] = useState(false);
+  const [usernameCheckState, setUsernameCheckState] =
+    useState<UsernameCheckState>({
+      status: "idle",
+      error: null,
+    });
   const usernameCheckIdRef = useRef(0);
 
   const checkUsernameAvailability = async (username: string) => {
     const trimmedUsername = username.trim();
     if (!trimmedUsername) {
-      setUsernameAvailabilityError(null);
-      setIsUsernameAvailableNow(false);
+      setUsernameCheckState({ status: "idle", error: null });
       return { available: false, error: "Username is required" };
     }
 
     const checkId = ++usernameCheckIdRef.current;
-    setIsCheckingUsername(true);
+    setUsernameCheckState({ status: "checking", error: null });
 
     try {
-      const result = await isUsernameAvailable(trimmedUsername);
+      const result = await UserAppService.isUsernameAvailable(trimmedUsername, fetch);
       if (checkId !== usernameCheckIdRef.current) {
         return { available: false, error: "Stale username check" };
       }
 
-      if (!result.available) {
-        const error = result.error ?? "Username is already taken";
-        setUsernameAvailabilityError(error);
-        setIsUsernameAvailableNow(false);
+      if (!result.ok) {
+        const error = result.message || "Failed to check username availability";
+        setUsernameCheckState({ status: "unavailable", error });
         return { available: false, error };
       }
 
-      setUsernameAvailabilityError(null);
-      setIsUsernameAvailableNow(true);
+      if (!result.data) {
+        const error = "Username is already taken";
+        setUsernameCheckState({ status: "unavailable", error });
+        return { available: false, error };
+      }
+
+      setUsernameCheckState({ status: "available", error: null });
       return { available: true };
     } catch {
       if (checkId !== usernameCheckIdRef.current) {
@@ -74,13 +81,8 @@ const FormPage = () => {
       }
 
       const error = "Could not validate username";
-      setUsernameAvailabilityError(error);
-      setIsUsernameAvailableNow(false);
+      setUsernameCheckState({ status: "unavailable", error });
       return { available: false, error };
-    } finally {
-      if (checkId === usernameCheckIdRef.current) {
-        setIsCheckingUsername(false);
-      }
     }
   };
 
@@ -208,21 +210,23 @@ const FormPage = () => {
                 void checkUsernameAvailability(field.state.value);
               }}
               onChange={(e) => {
-                setUsernameAvailabilityError(null);
-                setIsUsernameAvailableNow(false);
-                field.handleChange(e.target.value);
+                const nextValue = e.target.value;
+                setUsernameCheckState({ status: "idle", error: null });
+                field.handleChange(nextValue);
               }}
               placeholder="kingjames"
               errors={
-                usernameAvailabilityError
-                  ? [usernameAvailabilityError, ...field.state.meta.errors]
+                usernameCheckState.error
+                  ? [usernameCheckState.error, ...field.state.meta.errors]
                   : field.state.meta.errors
               }
               helperText={
-                isCheckingUsername ? "Checking username availability..." : undefined
+                usernameCheckState.status === "checking"
+                  ? "Checking username availability..."
+                  : undefined
               }
             />
-            {isUsernameAvailableNow && !isCheckingUsername && !usernameAvailabilityError && (
+            {usernameCheckState.status === "available" && (
               <p className="mt-1 inline-flex items-center gap-1 text-sm text-green-600">
                 <svg
                   aria-hidden="true"
@@ -266,8 +270,8 @@ const FormPage = () => {
               disabled={
                 !canSubmit ||
                 isSubmitting ||
-                isCheckingUsername ||
-                Boolean(usernameAvailabilityError)
+                usernameCheckState.status === "checking" ||
+                usernameCheckState.status === "unavailable"
               }
               type="submit"
             >
