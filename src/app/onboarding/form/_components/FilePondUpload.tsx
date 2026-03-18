@@ -1,7 +1,8 @@
 "use client";
 
-import { FilePond, registerPlugin } from "react-filepond";
-import { useCallback, useState, useEffect } from "react";
+import { Suspense, useCallback, useState } from "react";
+import dynamic from "next/dynamic";
+import type { FilePondFile } from "filepond";
 
 import "filepond/dist/filepond.min.css";
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
@@ -13,22 +14,32 @@ interface FilePondUploadProps {
   errors?: string[];
 }
 
-export function FilePondUpload({ photoLabelId, onChange, errors }: FilePondUploadProps) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [isClient, setIsClient] = useState(false);
+// Dynamically import FilePond with SSR disabled (needs browser APIs)
+const FilePond = dynamic(() => import("react-filepond").then((mod) => mod.FilePond), {
+  ssr: false,
+  loading: () => (
+    <div className="w-42.5 h-42.5 mx-auto flex items-center justify-center bg-gray-100 rounded-full">
+      <span className="text-gray-400">Loading...</span>
+    </div>
+  ),
+});
 
-  useEffect(() => {
-    // Register plugins only on client side
-    import("filepond-plugin-image-exif-orientation").then((mod) => {
-      import("filepond-plugin-image-preview").then((mod2) => {
-        registerPlugin(mod.default, mod2.default);
-        setIsClient(true);
-      });
-    });
-  }, []);
+// Register plugins at module level for client with parallel imports
+if (typeof window !== "undefined") {
+  Promise.all([
+    import("filepond-plugin-image-exif-orientation"),
+    import("filepond-plugin-image-preview"),
+  ]).then(([exif, preview]) => {
+    const { registerPlugin } = require("react-filepond");
+    registerPlugin(exif.default, preview.default);
+  });
+}
+
+function FilePondUploadContent({ photoLabelId, onChange, errors }: FilePondUploadProps) {
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleUpdateFiles = useCallback(
-    (fileItems: Array<{ file: File | null }>) => {
+    (fileItems: FilePondFile[]) => {
       const newFiles = fileItems
         .map((fileItem) => fileItem.file)
         .filter((file): file is File => file !== null);
@@ -39,20 +50,6 @@ export function FilePondUpload({ photoLabelId, onChange, errors }: FilePondUploa
     [onChange],
   );
 
-  if (!isClient) {
-    return (
-      <div className="space-y-2">
-        <span id={photoLabelId} className="block text-sm font-medium text-gray-700">
-          Profile Photo
-        </span>
-        <div className="w-42.5 h-42.5 mx-auto flex items-center justify-center bg-gray-100 rounded-full">
-          <span className="text-gray-400">Loading...</span>
-        </div>
-        {errors && errors.length > 0 && <p className="text-sm text-red-600">{errors[0]}</p>}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
       <span id={photoLabelId} className="block text-sm font-medium text-gray-700">
@@ -62,8 +59,6 @@ export function FilePondUpload({ photoLabelId, onChange, errors }: FilePondUploa
         {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
         {/* @ts-ignore - FilePond types are incomplete */}
         <FilePond
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
           files={files}
           onupdatefiles={handleUpdateFiles}
           allowMultiple={false}
@@ -79,5 +74,25 @@ export function FilePondUpload({ photoLabelId, onChange, errors }: FilePondUploa
       </div>
       {errors && errors.length > 0 && <p className="text-sm text-red-600">{errors[0]}</p>}
     </div>
+  );
+}
+
+export function FilePondUpload(props: FilePondUploadProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-2">
+          <span className="block text-sm font-medium text-gray-700">Profile Photo</span>
+          <div className="w-42.5 h-42.5 mx-auto flex items-center justify-center bg-gray-100 rounded-full">
+            <span className="text-gray-400">Loading...</span>
+          </div>
+          {props.errors && props.errors.length > 0 && (
+            <p className="text-sm text-red-600">{props.errors[0]}</p>
+          )}
+        </div>
+      }
+    >
+      <FilePondUploadContent {...props} />
+    </Suspense>
   );
 }

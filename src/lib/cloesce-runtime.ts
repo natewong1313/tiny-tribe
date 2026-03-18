@@ -27,14 +27,26 @@ const constructorRegistry: ConstructorRegistry = {
 
 let appPromise: Promise<CloesceApp> | null = null;
 
+function getCloesceWorkerUrl(): string {
+  const workerUrl = process.env.CLOESCE_WORKER_URL;
+  if (!workerUrl) {
+    throw new Error("CLOESCE_WORKER_URL environment variable is required");
+  }
+  return workerUrl;
+}
+
 export const getCloesceApp = async (): Promise<CloesceApp> => {
+  const workerUrl = getCloesceWorkerUrl();
+
   // In dev mode, don't cache to avoid stale I/O references after HMR
   if (process.env.NODE_ENV === "development") {
-    return CloesceApp.init(cidl as any, constructorRegistry, process.env.CLOESCE_WORKER_URL!);
+    // cidl is loaded from JSON, type assertion needed since CloesceAst type isn't exported
+    return CloesceApp.init(cidl as any, constructorRegistry, workerUrl);
   }
 
   if (!appPromise) {
-    appPromise = CloesceApp.init(cidl as any, constructorRegistry, process.env.CLOESCE_WORKER_URL!);
+    // cidl is loaded from JSON, type assertion needed since CloesceAst type isn't exported
+    appPromise = CloesceApp.init(cidl as any, constructorRegistry, workerUrl);
   }
 
   return appPromise;

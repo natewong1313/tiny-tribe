@@ -38,7 +38,11 @@ export default function SendFriendRequestButton({ targetUserId }: { targetUserId
         {isPending ? "Sending..." : "Add friend"}
       </button>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-red-600" role="alert" aria-live="polite">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

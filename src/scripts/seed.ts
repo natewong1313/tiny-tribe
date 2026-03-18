@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Post, User } from "../../.generated/client";
@@ -69,6 +70,42 @@ const fakePosts = [
   "Grateful for this community! 🙏",
 ];
 
+/**
+ * Validates and sanitizes an email address for safe SQL usage
+ * Only allows standard email characters
+ */
+function validateEmail(email: string): string | null {
+  // Email regex pattern (basic validation)
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return null;
+  }
+
+  return email;
+}
+
+/**
+ * Validates UUID format
+ */
+function validateUUID(id: string): string | null {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (!uuidRegex.test(id)) {
+    return null;
+  }
+
+  return id;
+}
+
+/**
+ * Escapes SQL string literals by replacing single quotes with two single quotes
+ * This prevents SQL injection for string values
+ */
+function escapeSqlString(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
 async function runLocalD1Json(sql: string): Promise<D1ExecuteItem[]> {
   const { stdout } = await execFileAsync("bunx", [
     "wrangler",
@@ -85,7 +122,13 @@ async function runLocalD1Json(sql: string): Promise<D1ExecuteItem[]> {
 }
 
 async function lookupUserIdByEmail(email: string): Promise<string | null> {
-  const escapedEmail = email.replaceAll("'", "''");
+  const validatedEmail = validateEmail(email);
+  if (!validatedEmail) {
+    console.error(`❌ Invalid email format: ${email}`);
+    return null;
+  }
+
+  const escapedEmail = escapeSqlString(validatedEmail);
   const rows = await runLocalD1Json(
     `SELECT id FROM "User" WHERE email = '${escapedEmail}' LIMIT 1;`,
   );
@@ -175,10 +218,16 @@ async function seedFriendships(userIds: string[]): Promise<void> {
   }
 
   const targetEmail = process.env.SEED_FRIEND_EMAIL ?? "test@gmail.com";
-  const targetUserId = await lookupUserIdByEmail(targetEmail);
+  const validatedEmail = validateEmail(targetEmail);
+  if (!validatedEmail) {
+    console.error(`❌ Invalid SEED_FRIEND_EMAIL: ${targetEmail}`);
+    return;
+  }
+
+  const targetUserId = await lookupUserIdByEmail(validatedEmail);
 
   if (!targetUserId) {
-    console.log(`⚠️ Skipping friendship seed: no User row for ${targetEmail}`);
+    console.log(`⚠️ Skipping friendship seed: no User row for ${validatedEmail}`);
     return;
   }
 
@@ -188,8 +237,17 @@ async function seedFriendships(userIds: string[]): Promise<void> {
     return;
   }
 
+  // Validate UUIDs before using in SQL
+  const validatedFriendshipId = validateUUID(crypto.randomUUID());
+  const validatedTargetId = validateUUID(targetUserId);
+  const validatedSeededId = validateUUID(seededFriendId);
+
+  if (!validatedFriendshipId || !validatedTargetId || !validatedSeededId) {
+    console.error("❌ Invalid UUID format detected");
+    return;
+  }
+
   const nowIso = new Date().toISOString();
-  const friendshipId = crypto.randomUUID();
 
   await runLocalD1Json(`
     INSERT INTO "Friendship" (
@@ -202,28 +260,28 @@ async function seedFriendships(userIds: string[]): Promise<void> {
       "updated_at"
     )
     SELECT
-      '${friendshipId}',
-      '${targetUserId}',
-      '${seededFriendId}',
+      '${escapeSqlString(validatedFriendshipId)}',
+      '${escapeSqlString(validatedTargetId)}',
+      '${escapeSqlString(validatedSeededId)}',
       'accepted',
-      '${nowIso}',
-      '${nowIso}',
-      '${nowIso}'
+      '${escapeSqlString(nowIso)}',
+      '${escapeSqlString(nowIso)}',
+      '${escapeSqlString(nowIso)}'
     WHERE NOT EXISTS (
       SELECT 1
       FROM "Friendship"
       WHERE (
-        "requesterId" = '${targetUserId}'
-        AND "addresseeId" = '${seededFriendId}'
+        "requesterId" = '${escapeSqlString(validatedTargetId)}'
+        AND "addresseeId" = '${escapeSqlString(validatedSeededId)}'
       ) OR (
-        "requesterId" = '${seededFriendId}'
-        AND "addresseeId" = '${targetUserId}'
+        "requesterId" = '${escapeSqlString(validatedSeededId)}'
+        AND "addresseeId" = '${escapeSqlString(validatedTargetId)}'
       )
     );
   `);
 
   console.log(
-    `✅ Ensured accepted friendship between ${targetEmail} and seeded user ${seededFriendId}`,
+    `✅ Ensured accepted friendship between ${validatedEmail} and seeded user ${seededFriendId}`,
   );
 }
 

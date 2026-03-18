@@ -14,7 +14,7 @@ export const PostResultItem = memo(function PostResultItem({ post }: { post: Pos
         <span className="text-sm text-gray-600 tabular-nums">User {post.userId}</span>
       </div>
       <p className="text-pretty text-gray-800">{post.text_content}</p>
-      <p className="mt-2 text-xs text-gray-400 tabular-nums">
+      <p className="mt-2 text-xs text-gray-400 tabular-nums" suppressHydrationWarning>
         {new Date(post.created_at).toLocaleDateString()}
       </p>
     </div>

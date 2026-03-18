@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { cn } from "@/lib/cn";
 import {
   type RemixiconComponentType,
@@ -22,27 +23,24 @@ interface NavButtonProps {
   selectedIcon: RemixiconComponentType;
 }
 
-const NavButton = (props: NavButtonProps) => {
-  let className = "";
-  let Icon = props.icon;
+const NavButton = memo(function NavButton(props: NavButtonProps) {
+  const className = props.isSelected
+    ? "text-tt-green-700 border-tt-green-700"
+    : "text-stone-500 hover:bg-stone-200 border-transparent";
 
-  if (props.isSelected) {
-    className = "text-tt-green-700 border-tt-green-700";
-    Icon = props.selectedIcon;
-  } else {
-    className = "text-stone-500 hover:bg-stone-200 border-transparent";
-  }
+  const Icon = props.isSelected ? props.selectedIcon : props.icon;
 
   return (
     <Link
       href={props.href}
+      aria-current={props.isSelected ? "page" : undefined}
       className={cn("items-center justify-center px-2.5 py-2.5 flex flex-col", className)}
     >
       <Icon size={20} />
       <span className="text-xs mt-1">{props.title}</span>
     </Link>
   );
-};
+});
 
 const Nav = () => {
   const pathname = usePathname();

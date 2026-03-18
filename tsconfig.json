@@ -30,6 +30,7 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.mts",
+    "src/**/*.d.ts",
     "plugins/**/*.ts",
     ".generated/**/*.ts",
     "vite.config.ts",

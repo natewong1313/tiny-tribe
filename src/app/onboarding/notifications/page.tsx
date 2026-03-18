@@ -5,9 +5,15 @@ import { useForm } from "@tanstack/react-form";
 import { UserAppService } from "@generated/client";
 import { z } from "zod";
 import { useRouter } from "vinext/shims/navigation";
-import PhoneInput from "react-phone-number-input";
+import dynamic from "next/dynamic";
+import { useId } from "react";
 import "react-phone-number-input/style.css";
-import { useCallback } from "react";
+
+// Dynamically import PhoneInput since it's only needed when text is selected
+const PhoneInput = dynamic(() => import("react-phone-number-input"), {
+  ssr: false,
+  loading: () => <div className="h-10 bg-gray-100 animate-pulse rounded" />,
+});
 
 interface NotificationOptionProps {
   label: string;
@@ -16,19 +22,12 @@ interface NotificationOptionProps {
   onClick: () => void;
 }
 
-const NotificationOption = ({
-  label,
-  description,
-  selected,
-  onClick,
-}: NotificationOptionProps) => (
+const NotificationOption = ({ label, description, selected, onClick }: NotificationOptionProps) => (
   <button
     type="button"
     onClick={onClick}
     className={`w-full text-left rounded-lg p-4 border transition-colors ${
-      selected
-        ? "border-tt-green-600 bg-tt-green-50"
-        : "border-stone-300 bg-stone-100"
+      selected ? "border-tt-green-600 bg-tt-green-50" : "border-stone-300 bg-stone-100"
     }`}
   >
     <p className="font-medium">{label}</p>
@@ -40,10 +39,7 @@ const notificationsSchema = z
   .object({
     notificationType: z
       .string()
-      .refine(
-        (value) => value === "email" || value === "text",
-        "Select a notification type",
-      ),
+      .refine((value) => value === "email" || value === "text", "Select a notification type"),
     phoneNumber: z.string(),
   })
   .superRefine((value, ctx) => {
@@ -61,14 +57,12 @@ function formatFirstError(errors: unknown[]): string {
   if (typeof firstError === "string") {
     return firstError;
   }
-  return (
-    (firstError as { message?: string } | undefined)?.message ||
-    String(firstError)
-  );
+  return (firstError as { message?: string } | undefined)?.message || String(firstError);
 }
 
 const NotificationsPage = () => {
   const router = useRouter();
+  const phoneInputId = useId();
 
   const form = useForm({
     defaultValues: {
@@ -118,8 +112,8 @@ const NotificationsPage = () => {
 
       <form.Field name="notificationType">
         {(field) => {
-          const handleEmailClick = useCallback(() => field.handleChange("email"), []);
-          const handleTextClick = useCallback(() => field.handleChange("text"), []);
+          const handleEmailClick = () => field.handleChange("email");
+          const handleTextClick = () => field.handleChange("text");
 
           return (
             <div className="space-y-3">
@@ -138,9 +132,7 @@ const NotificationsPage = () => {
               />
 
               {field.state.meta.errors.length > 0 ? (
-                <p className="text-sm text-red-600">
-                  {formatFirstError(field.state.meta.errors)}
-                </p>
+                <p className="text-sm text-red-600">{formatFirstError(field.state.meta.errors)}</p>
               ) : null}
             </div>
           );
@@ -153,10 +145,14 @@ const NotificationsPage = () => {
             <form.Field name="phoneNumber">
               {(field) => (
                 <div>
-                  <label className="block text-sm font-medium text-tt-green-700 mb-1">
+                  <label
+                    htmlFor={phoneInputId}
+                    className="block text-sm font-medium text-tt-green-700 mb-1"
+                  >
                     Phone number
                   </label>
                   <PhoneInput
+                    id={phoneInputId}
                     international
                     countryCallingCodeEditable={false}
                     defaultCountry="US"
@@ -177,25 +173,21 @@ const NotificationsPage = () => {
       </form.Subscribe>
 
       <div className="mt-auto">
-        <form.Subscribe selector={(state) => state.canSubmit}>
-          {(canSubmit) => (
-            <form.Subscribe selector={(state) => state.isSubmitting}>
-              {(isSubmitting) => (
-                <form.Subscribe
-                  selector={(state) => state.values.notificationType}
-                >
-                  {(notificationType) => (
-                    <Button
-                      type="submit"
-                      isLoading={isSubmitting}
-                      disabled={!canSubmit || isSubmitting || !notificationType}
-                    >
-                      {isSubmitting ? "Saving..." : "Continue"}
-                    </Button>
-                  )}
-                </form.Subscribe>
-              )}
-            </form.Subscribe>
+        <form.Subscribe
+          selector={(state) => ({
+            canSubmit: state.canSubmit,
+            isSubmitting: state.isSubmitting,
+            notificationType: state.values.notificationType,
+          })}
+        >
+          {({ canSubmit, isSubmitting, notificationType }) => (
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              disabled={!canSubmit || isSubmitting || !notificationType}
+            >
+              {isSubmitting ? "Saving..." : "Continue"}
+            </Button>
           )}
         </form.Subscribe>
       </div>

@@ -1,6 +1,12 @@
 import { Suspense } from "react";
 import { Post, PostAppService } from "@generated/client";
 import { fetchWithSession } from "@/lib/fetch";
+import type { Metadata } from "vinext/shims/metadata";
+
+export const metadata: Metadata = {
+  title: "Home | Tiny Tribe",
+  description: "Your personal feed",
+};
 
 export default function HomePage() {
   return (

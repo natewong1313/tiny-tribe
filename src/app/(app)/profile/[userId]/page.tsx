@@ -2,11 +2,29 @@ import { Post, PostAppService, UserAppService } from "@generated/client";
 import { fetchWithSession } from "@/lib/fetch";
 import { RiUserLine } from "@remixicon/react";
 import SendFriendRequestButton from "./_components/send-friend-request-button";
+import type { Metadata } from "vinext/shims/metadata";
 
 interface UserProfilePageProps {
   params: Promise<{
     userId: string;
   }>;
+}
+
+export async function generateMetadata({ params }: UserProfilePageProps): Promise<Metadata> {
+  const { userId } = await params;
+  const result = await UserAppService.getUserProfileByIdWithPhoto(userId, fetchWithSession);
+
+  if (!result.ok || !result.data) {
+    return {
+      title: "Profile | Tiny Tribe",
+    };
+  }
+
+  const { user } = result.data;
+  return {
+    title: `${user.name || user.username || "Profile"} | Tiny Tribe`,
+    description: `View ${user.name || user.username || "user"}'s profile`,
+  };
 }
 
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
@@ -41,6 +59,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-start gap-4">
           {profile.photoDataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.photoDataUrl}
               alt={profile.user.name || "Profile"}

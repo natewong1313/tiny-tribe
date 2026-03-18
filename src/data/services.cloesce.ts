@@ -102,7 +102,8 @@ export class UserAppService {
     const hasNotificationPreference =
       notificationType === "email" || (notificationType === "text" && Boolean(phoneNumber));
 
-    const needsOnboarding = !user.name || !user.username || !user.photo || !hasNotificationPreference;
+    const needsOnboarding =
+      !user.name || !user.username || !user.photo || !hasNotificationPreference;
 
     return HttpResult.ok(200, !needsOnboarding);
   }
@@ -1020,7 +1021,10 @@ export class PostAppService {
   }
 
   @Get()
-  async listPostsForUserIfFriend(targetUserId: string, limit?: number): Promise<HttpResult<Post[]>> {
+  async listPostsForUserIfFriend(
+    targetUserId: string,
+    limit?: number,
+  ): Promise<HttpResult<Post[]>> {
     const userId = await this.getUserId();
     if (!userId) {
       return HttpResult.fail(401, "Unauthorized");

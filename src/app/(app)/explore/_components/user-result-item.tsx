@@ -1,5 +1,3 @@
-"use client";
-
 import { memo } from "react";
 import { SearchUserWithPhotoResponse } from "@generated/client";
 import { RiUserLine } from "@remixicon/react";
@@ -17,6 +15,7 @@ export const UserResultItem = memo(function UserResultItem({
     >
       <div className="w-12 h-12 rounded-full bg-stone-300 flex items-center justify-center">
         {user.photoDataUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={user.photoDataUrl}
             alt={user.user.name || user.user.email}

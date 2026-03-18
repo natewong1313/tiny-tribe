@@ -2,6 +2,12 @@ import { PostAppService, UserAppService } from "@generated/client";
 import { fetchWithSession } from "@/lib/fetch";
 import { RiUserLine } from "@remixicon/react";
 import EditProfileForm from "./_components/edit-profile-form";
+import type { Metadata } from "vinext/shims/metadata";
+
+export const metadata: Metadata = {
+  title: "Profile | Tiny Tribe",
+  description: "View and edit your profile",
+};
 
 export default async function ProfilePage() {
   const [profileResult, postsResult] = await Promise.all([
@@ -25,6 +31,7 @@ export default async function ProfilePage() {
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-start gap-4">
           {photoDataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={photoDataUrl}
               alt={user.name || "Profile"}

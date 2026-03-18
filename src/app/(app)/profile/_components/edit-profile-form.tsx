@@ -101,6 +101,7 @@ export default function EditProfileForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex items-center gap-3">
         {previewImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={previewImage}
             alt="Profile preview"

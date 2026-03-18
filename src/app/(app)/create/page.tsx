@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useId, useEffect } from "react";
+import { useState, useRef, useCallback, useId, useEffect, memo } from "react";
 import { Button } from "@/components/button";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
@@ -45,6 +45,30 @@ async function fetchLinkPreview(url: string): Promise<LinkPreview | null> {
     return null;
   }
 }
+
+interface SubmitButtonProps {
+  formId: string;
+  canSubmit: boolean;
+  isSubmitting: boolean;
+}
+
+const SubmitButton = memo(function SubmitButton({
+  formId,
+  canSubmit,
+  isSubmitting,
+}: SubmitButtonProps) {
+  return (
+    <Button
+      type="submit"
+      form={formId}
+      className="w-fit py-1 px-3"
+      disabled={!canSubmit || isSubmitting}
+      isLoading={isSubmitting}
+    >
+      {isSubmitting ? "Posting..." : "Post"}
+    </Button>
+  );
+});
 
 export default function CreatePage() {
   const formId = useId();
@@ -93,7 +117,9 @@ export default function CreatePage() {
 
   const clearAllMedia = useCallback(() => {
     setMediaItems((prev) => {
-      prev.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      prev.forEach((item) => {
+        URL.revokeObjectURL(item.previewUrl);
+      });
       return [];
     });
   }, []);
@@ -153,7 +179,7 @@ export default function CreatePage() {
         URL.revokeObjectURL(item.previewUrl);
       });
     };
-  }, []);
+  }, [mediaItems]);
 
   return (
     <div className="min-h-screen">
@@ -174,15 +200,7 @@ export default function CreatePage() {
         <h1 className="text-lg font-semibold text-gray-800">Create Post</h1>
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              form={formId}
-              className="w-fit py-1 px-3"
-              disabled={!canSubmit || isSubmitting}
-              isLoading={isSubmitting}
-            >
-              {isSubmitting ? "Posting..." : "Post"}
-            </Button>
+            <SubmitButton formId={formId} canSubmit={canSubmit} isSubmitting={isSubmitting} />
           )}
         </form.Subscribe>
       </div>
@@ -217,9 +235,9 @@ export default function CreatePage() {
 
         {linkPreviews.length > 0 && (
           <div className="mt-4 space-y-2">
-            {linkPreviews.map((preview, index) => (
+            {linkPreviews.map((preview) => (
               <a
-                key={index}
+                key={preview.url}
                 href={preview.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -237,7 +255,6 @@ export default function CreatePage() {
           </div>
         )}
 
-
         {mediaItems.length > 0 ? (
           <div className="mt-4 grid grid-cols-3 gap-2">
             {mediaItems.map((item) => (
@@ -251,6 +268,7 @@ export default function CreatePage() {
                     <track kind="captions" src="" label="No captions available" />
                   </video>
                 ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={item.previewUrl}
                     alt={item.file.name}

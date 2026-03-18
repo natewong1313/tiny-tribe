@@ -10,7 +10,7 @@ import { UserAppService } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
 import useSWR from "swr";
 import { FilePondUpload } from "./_components/FilePondUpload";
-import { CheckmarkIcon } from "./_components/CheckmarkIcon";
+import { CheckmarkIcon } from "./_components/checkmark-icon";
 
 const USERNAME_REGEX = /[^a-zA-Z0-9_]/g;
 
@@ -20,10 +20,7 @@ const onboardingSchema = z.object({
     .string()
     .trim()
     .min(1, "Username is required")
-    .regex(
-      /^[a-zA-Z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores",
-    )
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores")
     .refine((value) => !value.endsWith("_"), {
       message: "Username cannot end with underscore",
     }),
@@ -35,17 +32,18 @@ type UsernameCheckResult = {
   error?: string;
 };
 
-const checkUsernameFetcher = async (
-  username: string,
-): Promise<UsernameCheckResult> => {
+type UsernameCheckState =
+  | { status: "idle"; error: null }
+  | { status: "checking"; error: null }
+  | { status: "available"; error: null }
+  | { status: "unavailable"; error: string };
+
+const checkUsernameFetcher = async (username: string): Promise<UsernameCheckResult> => {
   if (!username.trim()) {
     return { available: false, error: "Username is required" };
   }
 
-  const result = await UserAppService.isUsernameAvailable(
-    username.trim(),
-    fetch,
-  );
+  const result = await UserAppService.isUsernameAvailable(username.trim(), fetch);
 
   if (!result.ok) {
     return {
@@ -67,10 +65,7 @@ function formatFirstError(errors: unknown[]): string {
   if (typeof firstError === "string") {
     return firstError;
   }
-  return (
-    (firstError as { message?: string } | undefined)?.message ||
-    String(firstError)
-  );
+  return (firstError as { message?: string } | undefined)?.message || String(firstError);
 }
 
 const FormPage = () => {
@@ -90,7 +85,7 @@ const FormPage = () => {
     },
   );
 
-  let usernameCheckState;
+  let usernameCheckState: UsernameCheckState;
   if (!usernameToCheck) {
     usernameCheckState = { status: "idle" as const, error: null };
   } else if (isCheckingUsername) {
@@ -104,12 +99,9 @@ const FormPage = () => {
     };
   }
 
-  const handlePhotoChange = useCallback(
-    (fileName: string, file: File | null) => {
-      setPhotoFile(file);
-    },
-    [],
-  );
+  const handlePhotoChange = useCallback((fileName: string, file: File | null) => {
+    setPhotoFile(file);
+  }, []);
 
   const handleUsernameBlur = useCallback((username: string) => {
     setUsernameToCheck(username);
@@ -137,15 +129,13 @@ const FormPage = () => {
 
     onSubmit: async ({ value, formApi }) => {
       // Trigger username check if not already checked
-      if (!usernameCheckData) {
+      if (!usernameCheckData || usernameToCheck !== value.username) {
         setUsernameToCheck(value.username);
-        // Wait for SWR to fetch
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Check fresh - SWR may be stale, so we always verify with a direct call
       }
 
-      // Re-check after potential fetch
-      const checkResult =
-        usernameCheckData || (await checkUsernameFetcher(value.username));
+      // Always check fresh - don't rely on potentially stale SWR data
+      const checkResult = await checkUsernameFetcher(value.username);
 
       if (!checkResult.available) {
         formApi.fieldInfo.username.instance?.setErrorMap({
@@ -162,9 +152,7 @@ const FormPage = () => {
       }
 
       // Convert photo to bytes
-      const photoBytes = await photoFile
-        .arrayBuffer()
-        .then((buffer) => new Uint8Array(buffer));
+      const photoBytes = await photoFile.arrayBuffer().then((buffer) => new Uint8Array(buffer));
 
       // Call service to complete onboarding
       const result = await UserAppService.completeOnboarding(
@@ -207,10 +195,7 @@ const FormPage = () => {
   );
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6 p-8 flex flex-col min-h-screen"
-    >
+    <form onSubmit={handleSubmit} className="space-y-6 p-8 flex flex-col min-h-screen">
       <form.Field name="photo">
         {(field) => (
           <FilePondUpload
@@ -230,10 +215,10 @@ const FormPage = () => {
 
       <form.Field name="username">
         {(field) => {
-          const handleBlur = useCallback(() => {
+          const handleBlur = () => {
             field.handleBlur();
             handleUsernameBlur(field.state.value);
-          }, [field.handleBlur, field.state.value, handleUsernameBlur]);
+          };
 
           return (
             <div>
@@ -242,9 +227,7 @@ const FormPage = () => {
                 name={field.name}
                 value={field.state.value}
                 onBlur={handleBlur}
-                onChange={(e) =>
-                  handleUsernameChange(e.target.value, field.handleChange)
-                }
+                onChange={(e) => handleUsernameChange(e.target.value, field.handleChange)}
                 placeholder="kingjames"
                 errors={
                   usernameCheckState.error
@@ -283,9 +266,7 @@ const FormPage = () => {
       </form.Field>
 
       <div className="mt-auto">
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button
               isLoading={isSubmitting}
