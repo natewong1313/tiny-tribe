@@ -52,6 +52,13 @@ const SERVICE_ALLOWED_METHODS: Record<string, Set<string>> = {
     "isUsernameAvailable",
     "getProfileWithPhoto",
     "searchUsers",
+    "sendFriendRequest",
+    "acceptFriendRequest",
+    "rejectFriendRequest",
+    "blockUser",
+    "listPendingIncoming",
+    "listPendingOutgoing",
+    "listFriends",
   ]),
 };
 

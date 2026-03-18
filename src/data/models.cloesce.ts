@@ -26,6 +26,8 @@ export class User {
   updated_at!: Date;
 
   posts!: Post[];
+  sentFriendRequests!: Friendship[];
+  receivedFriendRequests!: Friendship[];
 
   static authPolicy() {
     return {
@@ -118,6 +120,35 @@ export class PostMedia {
 
   static fromJson(data: any): PostMedia {
     return Object.assign(new PostMedia(), data);
+  }
+}
+
+@Model("db")
+export class Friendship {
+  @PrimaryKey
+  id!: string;
+
+  @ForeignKey<User>((u) => u.id)
+  requesterId!: string;
+  requester!: User;
+
+  @ForeignKey<User>((u) => u.id)
+  addresseeId!: string;
+  addressee!: User;
+
+  status!: string;
+  responded_at!: Date | null;
+  created_at!: Date;
+  updated_at!: Date;
+
+  static authPolicy() {
+    return {
+      internal: true,
+    };
+  }
+
+  static fromJson(data: any): Friendship {
+    return Object.assign(new Friendship(), data);
   }
 }
 

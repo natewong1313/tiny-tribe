@@ -1,5 +1,5 @@
-import { DataSource, Get, HttpResult, Orm, Service } from "cloesce/backend";
-import { Post, PostMedia, User } from "./models.cloesce";
+import { DataSource, Get, HttpResult, Orm, Put, Service } from "cloesce/backend";
+import { Friendship, Post, PostMedia, User } from "./models.cloesce";
 import { Env } from "./main.cloesce";
 import { validateUsername } from "../lib/username";
 import { getAuth } from "@/lib/auth-server";
@@ -18,6 +18,47 @@ export class SearchUserWithPhotoResponse {
 export class UserAppService {
   env!: Env;
   request!: Request;
+
+  private normalizeLimit(limit: unknown, fallback: number, max: number): number {
+    if (typeof limit !== "number" || !Number.isFinite(limit)) {
+      return fallback;
+    }
+
+    return Math.max(1, Math.min(max, Math.floor(limit)));
+  }
+
+  private async loadFriendshipBetween(
+    aUserId: string,
+    bUserId: string,
+  ): Promise<Friendship | null> {
+    const orm = Orm.fromEnv(this.env);
+    const friendshipsByPair: DataSource<Friendship> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT * FROM cte
+        WHERE (
+          requesterId = ?
+          AND addresseeId = ?
+        ) OR (
+          requesterId = ?
+          AND addresseeId = ?
+        )
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "LastSeen", "Offset", "LastSeen", "Limit"],
+    };
+
+    const matches = await orm.list(Friendship, {
+      include: friendshipsByPair,
+      offset: aUserId as unknown as number,
+      lastSeen: { id: bUserId } as Partial<Friendship>,
+      limit: 1,
+    });
+
+    return matches[0] ?? null;
+  }
 
   private async getUserId(): Promise<string | null> {
     const auth = getAuth();
@@ -237,6 +278,315 @@ export class UserAppService {
     );
 
     return HttpResult.ok(200, usersWithPhoto);
+  }
+
+  @Put()
+  async sendFriendRequest(targetUserId: string): Promise<HttpResult<Friendship>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (typeof targetUserId !== "string" || !targetUserId.trim()) {
+      return HttpResult.fail(400, "Target user id is required");
+    }
+
+    if (targetUserId === userId) {
+      return HttpResult.fail(400, "Cannot send a friend request to yourself");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const targetUser = await orm.get(User, {
+      primaryKey: { id: targetUserId },
+      include: {},
+    });
+
+    if (!targetUser) {
+      return HttpResult.fail(404, "Target user not found");
+    }
+
+    const existing = await this.loadFriendshipBetween(userId, targetUserId);
+    if (existing) {
+      if (existing.status === "blocked") {
+        return HttpResult.fail(403, "Friendship actions are blocked between these users");
+      }
+
+      if (existing.status === "accepted") {
+        return HttpResult.fail(409, "You are already friends");
+      }
+
+      return HttpResult.fail(409, "A friend request already exists");
+    }
+
+    const now = new Date();
+    const created = await orm.upsert(
+      Friendship,
+      {
+        id: crypto.randomUUID(),
+        requesterId: userId,
+        addresseeId: targetUserId,
+        status: "pending",
+        responded_at: null,
+        created_at: now,
+        updated_at: now,
+      },
+      {},
+    );
+
+    if (!created) {
+      return HttpResult.fail(500, "Failed to create friend request");
+    }
+
+    return HttpResult.ok(200, created);
+  }
+
+  @Put()
+  async acceptFriendRequest(friendshipId: string): Promise<HttpResult<Friendship>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (typeof friendshipId !== "string" || !friendshipId.trim()) {
+      return HttpResult.fail(400, "Friendship id is required");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const friendship = await orm.get(Friendship, {
+      primaryKey: { id: friendshipId },
+      include: {},
+    });
+
+    if (!friendship) {
+      return HttpResult.fail(404, "Friend request not found");
+    }
+
+    if (friendship.addresseeId !== userId) {
+      return HttpResult.fail(403, "Only the recipient can accept this friend request");
+    }
+
+    if (friendship.status !== "pending") {
+      return HttpResult.fail(409, "Only pending requests can be accepted");
+    }
+
+    const now = new Date();
+    const updated = await orm.upsert(
+      Friendship,
+      {
+        id: friendship.id,
+        requesterId: friendship.requesterId,
+        addresseeId: friendship.addresseeId,
+        status: "accepted",
+        responded_at: now,
+        created_at: friendship.created_at,
+        updated_at: now,
+      },
+      {},
+    );
+
+    if (!updated) {
+      return HttpResult.fail(500, "Failed to accept friend request");
+    }
+
+    return HttpResult.ok(200, updated);
+  }
+
+  @Put()
+  async rejectFriendRequest(friendshipId: string): Promise<HttpResult<void>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (typeof friendshipId !== "string" || !friendshipId.trim()) {
+      return HttpResult.fail(400, "Friendship id is required");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const friendship = await orm.get(Friendship, {
+      primaryKey: { id: friendshipId },
+      include: {},
+    });
+
+    if (!friendship) {
+      return HttpResult.fail(404, "Friend request not found");
+    }
+
+    if (friendship.addresseeId !== userId) {
+      return HttpResult.fail(403, "Only the recipient can reject this friend request");
+    }
+
+    if (friendship.status !== "pending") {
+      return HttpResult.fail(409, "Only pending requests can be rejected");
+    }
+
+    await this.env.db.prepare(`DELETE FROM "Friendship" WHERE "id" = ?`).bind(friendship.id).run();
+
+    return HttpResult.ok(200);
+  }
+
+  @Put()
+  async blockUser(targetUserId: string): Promise<HttpResult<Friendship>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (typeof targetUserId !== "string" || !targetUserId.trim()) {
+      return HttpResult.fail(400, "Target user id is required");
+    }
+
+    if (targetUserId === userId) {
+      return HttpResult.fail(400, "Cannot block yourself");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const targetUser = await orm.get(User, {
+      primaryKey: { id: targetUserId },
+      include: {},
+    });
+
+    if (!targetUser) {
+      return HttpResult.fail(404, "Target user not found");
+    }
+
+    await this.env.db
+      .prepare(
+        `
+          DELETE FROM "Friendship"
+          WHERE (
+            "requesterId" = ?
+            AND "addresseeId" = ?
+          ) OR (
+            "requesterId" = ?
+            AND "addresseeId" = ?
+          )
+        `,
+      )
+      .bind(userId, targetUserId, targetUserId, userId)
+      .run();
+
+    const now = new Date();
+    const blocked = await orm.upsert(
+      Friendship,
+      {
+        id: crypto.randomUUID(),
+        requesterId: userId,
+        addresseeId: targetUserId,
+        status: "blocked",
+        responded_at: now,
+        created_at: now,
+        updated_at: now,
+      },
+      {},
+    );
+
+    if (!blocked) {
+      return HttpResult.fail(500, "Failed to block user");
+    }
+
+    return HttpResult.ok(200, blocked);
+  }
+
+  @Get()
+  async listPendingIncoming(limit?: number): Promise<HttpResult<Friendship[]>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    const normalizedLimit = this.normalizeLimit(limit, 50, 200);
+    const orm = Orm.fromEnv(this.env);
+    const incomingPending: DataSource<Friendship> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT * FROM cte
+        WHERE addresseeId = ?
+          AND status = 'pending'
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "Limit"],
+    };
+
+    const friendships = await orm.list(Friendship, {
+      include: incomingPending,
+      offset: userId as unknown as number,
+      limit: normalizedLimit,
+    });
+
+    return HttpResult.ok(200, friendships);
+  }
+
+  @Get()
+  async listPendingOutgoing(limit?: number): Promise<HttpResult<Friendship[]>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    const normalizedLimit = this.normalizeLimit(limit, 50, 200);
+    const orm = Orm.fromEnv(this.env);
+    const outgoingPending: DataSource<Friendship> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT * FROM cte
+        WHERE requesterId = ?
+          AND status = 'pending'
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "Limit"],
+    };
+
+    const friendships = await orm.list(Friendship, {
+      include: outgoingPending,
+      offset: userId as unknown as number,
+      limit: normalizedLimit,
+    });
+
+    return HttpResult.ok(200, friendships);
+  }
+
+  @Get()
+  async listFriends(limit?: number): Promise<HttpResult<User[]>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    const normalizedLimit = this.normalizeLimit(limit, 100, 500);
+    const orm = Orm.fromEnv(this.env);
+    const friendsByUserId: DataSource<User> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT DISTINCT cte.*
+        FROM cte
+        INNER JOIN "Friendship"
+          ON (
+            "Friendship"."status" = 'accepted'
+            AND (
+              ("Friendship"."requesterId" = ? AND cte."id" = "Friendship"."addresseeId")
+              OR ("Friendship"."addresseeId" = ? AND cte."id" = "Friendship"."requesterId")
+            )
+          )
+        ORDER BY cte.created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "LastSeen", "Limit"],
+    };
+
+    const friends = await orm.list(User, {
+      include: friendsByUserId,
+      offset: userId as unknown as number,
+      lastSeen: { id: userId },
+      limit: normalizedLimit,
+    });
+
+    return HttpResult.ok(200, friends);
   }
 }
 
