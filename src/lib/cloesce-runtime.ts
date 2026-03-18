@@ -30,19 +30,11 @@ let appPromise: Promise<CloesceApp> | null = null;
 export const getCloesceApp = async (): Promise<CloesceApp> => {
   // In dev mode, don't cache to avoid stale I/O references after HMR
   if (process.env.NODE_ENV === "development") {
-    return CloesceApp.init(
-      cidl as any,
-      constructorRegistry,
-      process.env.CLOESCE_WORKER_URL!,
-    );
+    return CloesceApp.init(cidl as any, constructorRegistry, process.env.CLOESCE_WORKER_URL!);
   }
 
   if (!appPromise) {
-    appPromise = CloesceApp.init(
-      cidl as any,
-      constructorRegistry,
-      process.env.CLOESCE_WORKER_URL!,
-    );
+    appPromise = CloesceApp.init(cidl as any, constructorRegistry, process.env.CLOESCE_WORKER_URL!);
   }
 
   return appPromise;
