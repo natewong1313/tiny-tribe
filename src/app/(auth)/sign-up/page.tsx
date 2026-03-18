@@ -55,6 +55,8 @@ const SignUpPage = () => {
           username: "",
           email_verified: false,
           image: null,
+          phone_number: "",
+          notification_type: "",
           created_at: new Date(),
           updated_at: new Date(),
         });

@@ -1,0 +1,684 @@
+{
+  "hash": 2353986009,
+  "models": {
+    "BetterAuthAccount": {
+      "hash": 2546171238,
+      "name": "BetterAuthAccount",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 3482824718,
+          "value": {
+            "name": "account_id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 3822102187,
+          "value": {
+            "name": "provider_id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 1141763839,
+          "value": {
+            "name": "user_id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2642957060,
+          "value": {
+            "name": "access_token",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2942123927,
+          "value": {
+            "name": "refresh_token",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2886649614,
+          "value": {
+            "name": "id_token",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4079873566,
+          "value": {
+            "name": "access_token_expires_at",
+            "cidl_type": {
+              "Nullable": "DateIso"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 32935339,
+          "value": {
+            "name": "refresh_token_expires_at",
+            "cidl_type": {
+              "Nullable": "DateIso"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2168288062,
+          "value": {
+            "name": "scope",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 3347029640,
+          "value": {
+            "name": "password",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": []
+    },
+    "BetterAuthSession": {
+      "hash": 1861873932,
+      "name": "BetterAuthSession",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 1469169224,
+          "value": {
+            "name": "expires_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2118228611,
+          "value": {
+            "name": "token",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 3437210703,
+          "value": {
+            "name": "ip_address",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 202349695,
+          "value": {
+            "name": "user_agent",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 1141763839,
+          "value": {
+            "name": "user_id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": []
+    },
+    "BetterAuthUser": {
+      "hash": 2696682641,
+      "name": "BetterAuthUser",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 3914684882,
+          "value": {
+            "name": "name",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 1372864368,
+          "value": {
+            "name": "email",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 887166132,
+          "value": {
+            "name": "email_verified",
+            "cidl_type": "Boolean"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 3776978725,
+          "value": {
+            "name": "image",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": []
+    },
+    "BetterAuthVerification": {
+      "hash": 1769161373,
+      "name": "BetterAuthVerification",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 4218926655,
+          "value": {
+            "name": "identifier",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 12541419,
+          "value": {
+            "name": "value",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 1469169224,
+          "value": {
+            "name": "expires_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": []
+    },
+    "User": {
+      "hash": 1128510330,
+      "name": "User",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 3914684882,
+          "value": {
+            "name": "name",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 1372864368,
+          "value": {
+            "name": "email",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 887166132,
+          "value": {
+            "name": "email_verified",
+            "cidl_type": "Boolean"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 3776978725,
+          "value": {
+            "name": "image",
+            "cidl_type": {
+              "Nullable": "Text"
+            }
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 1028450524,
+          "value": {
+            "name": "username",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2549471797,
+          "value": {
+            "name": "phone_number",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 917851245,
+          "value": {
+            "name": "notification_type",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": [
+        {
+          "hash": 979390957,
+          "var_name": "posts",
+          "model_reference": "Post",
+          "kind": {
+            "OneToMany": {
+              "key_columns": [
+                "userId"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Post": {
+      "hash": 3869250,
+      "name": "Post",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 3608699239,
+          "value": {
+            "name": "userId",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": {
+            "model_name": "User",
+            "column_name": "id"
+          },
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 2237479744,
+          "value": {
+            "name": "text_content",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": [
+        {
+          "hash": 1882043315,
+          "var_name": "user",
+          "model_reference": "User",
+          "kind": {
+            "OneToOne": {
+              "key_columns": [
+                "userId"
+              ]
+            }
+          }
+        },
+        {
+          "hash": 1864943860,
+          "var_name": "media",
+          "model_reference": "PostMedia",
+          "kind": {
+            "OneToMany": {
+              "key_columns": [
+                "postId"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "PostMedia": {
+      "hash": 856278865,
+      "name": "PostMedia",
+      "d1_binding": "db",
+      "primary_key_columns": [
+        {
+          "hash": 3580432559,
+          "value": {
+            "name": "id",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "columns": [
+        {
+          "hash": 10947212,
+          "value": {
+            "name": "postId",
+            "cidl_type": "Text"
+          },
+          "foreign_key_reference": {
+            "model_name": "Post",
+            "column_name": "id"
+          },
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 503342483,
+          "value": {
+            "name": "created_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        },
+        {
+          "hash": 4156254378,
+          "value": {
+            "name": "updated_at",
+            "cidl_type": "DateIso"
+          },
+          "foreign_key_reference": null,
+          "unique_ids": [],
+          "composite_id": null
+        }
+      ],
+      "navigation_properties": [
+        {
+          "hash": 1975182334,
+          "var_name": "post",
+          "model_reference": "Post",
+          "kind": {
+            "OneToOne": {
+              "key_columns": [
+                "postId"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

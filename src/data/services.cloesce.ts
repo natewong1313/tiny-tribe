@@ -15,6 +15,10 @@ export class SearchUserWithPhotoResponse {
   photoDataUrl!: string | null;
 }
 
+export class CompleteOnboardingResponse {
+  user!: User;
+}
+
 @Service
 export class UserAppService {
   env!: Env;
@@ -87,9 +91,65 @@ export class UserAppService {
       return HttpResult.fail(404, "User does not exist");
     }
 
-    const needsOnboarding = !user.name || !user.username || !user.photo;
+    const notificationType = user.notification_type?.trim();
+    const phoneNumber = user.phone_number?.trim();
+    const hasNotificationPreference =
+      notificationType === "email" || (notificationType === "text" && Boolean(phoneNumber));
+
+    const needsOnboarding = !user.name || !user.username || !user.photo || !hasNotificationPreference;
 
     return HttpResult.ok(200, !needsOnboarding);
+  }
+
+  @Put()
+  async updateNotificationPreference(
+    notificationType: string,
+    phoneNumber?: string,
+  ): Promise<HttpResult<void>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    const normalizedType = notificationType.trim().toLowerCase();
+    if (normalizedType !== "email" && normalizedType !== "text") {
+      return HttpResult.fail(400, "Select a notification type");
+    }
+
+    const normalizedPhone = (phoneNumber ?? "").trim();
+    if (normalizedType === "text" && !normalizedPhone) {
+      return HttpResult.fail(400, "Phone number is required for text notifications");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const existingUser = await orm.get(User, {
+      primaryKey: { id: userId },
+    });
+    if (!existingUser) {
+      return HttpResult.fail(404, "User does not exist");
+    }
+
+    try {
+      await this.env.db
+        .prepare(
+          `
+            UPDATE "User"
+            SET "notification_type" = ?, "phone_number" = ?, "updated_at" = ?
+            WHERE "id" = ?
+          `,
+        )
+        .bind(
+          normalizedType,
+          normalizedType === "text" ? normalizedPhone : "",
+          new Date().toISOString(),
+          userId,
+        )
+        .run();
+    } catch {
+      return HttpResult.fail(500, "Failed to save notification preferences");
+    }
+
+    return HttpResult.ok(200);
   }
 
   @Get()
@@ -373,6 +433,53 @@ export class UserAppService {
     );
 
     return HttpResult.ok(200, usersWithPhoto);
+  }
+
+  @Put()
+  async completeOnboarding(
+    name: string,
+    username: string,
+    photoBytes: Uint8Array,
+  ): Promise<HttpResult<CompleteOnboardingResponse>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    // Validate username availability
+    const usernameCheck = await this.isUsernameAvailable(username);
+    if (!usernameCheck.ok || !usernameCheck.data) {
+      return HttpResult.fail(400, usernameCheck.message || "Username is already taken");
+    }
+
+    // Save user using raw SQL (like updateNotificationPreference)
+    try {
+      await this.env.db
+        .prepare(
+          `
+            UPDATE "User"
+            SET "name" = ?, "username" = ?, "updated_at" = ?
+            WHERE "id" = ?
+          `,
+        )
+        .bind(name, username, new Date().toISOString(), userId)
+        .run();
+    } catch {
+      return HttpResult.fail(500, "Failed to save user");
+    }
+
+    // Upload photo to R2
+    try {
+      await this.env.bucket.put(`user/photos/${userId}.png`, photoBytes);
+    } catch {
+      return HttpResult.fail(500, "Failed to upload photo");
+    }
+
+    const user = new User();
+    user.id = userId;
+    const response = new CompleteOnboardingResponse();
+    response.user = user;
+    return HttpResult.ok(200, response);
   }
 
   @Put()

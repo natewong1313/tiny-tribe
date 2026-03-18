@@ -22,6 +22,8 @@ export class User {
   email_verified!: boolean;
   image!: string | null;
   username?: string;
+  phone_number?: string;
+  notification_type?: string;
   created_at!: Date;
   updated_at!: Date;
 
