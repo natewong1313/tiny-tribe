@@ -1,13 +1,5 @@
 import { User, Post } from "../../.generated/client";
 
-function generateUUID(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
 const fakeUsers = [
   {
     name: "Alice Johnson",
@@ -38,7 +30,7 @@ const fakeUsers = [
 
 const fakePosts = [
   "Just finished a great workout! Feeling energized 💪",
-  "Beautiful day for a hike in the mountains 🏔️",
+  "Beautiful day for a hike in the mountains 🏔",
   "Working on a new project. Excited to share soon!",
   "Coffee and coding - the perfect Sunday morning ☕",
   "Finally mastered that recipe I've been working on! 🍳",
@@ -49,7 +41,7 @@ const fakePosts = [
   "Practicing guitar. Slowly getting better 🎸",
   "Sunday meal prep complete! 🥗",
   "Excited about the new features we're building!",
-  "Nothing beats home cooking 🏠🍽️",
+  "Nothing beats home cooking 🏠🍽",
   "Late night coding session... time for bed 😴",
   "Grateful for this community! 🙏",
 ];
@@ -59,7 +51,7 @@ async function seedUsers(): Promise<string[]> {
   const now = new Date();
 
   for (const userData of fakeUsers) {
-    const id = generateUUID();
+    const id = crypto.randomUUID();
     userIds.push(id);
 
     const result = await User.SAVE({
@@ -76,7 +68,10 @@ async function seedUsers(): Promise<string[]> {
     if (result.ok) {
       console.log(`✅ Created user: ${userData.username}`);
     } else {
-      console.error(`❌ Failed to create user ${userData.username}:`, result.message);
+      console.error(
+        `❌ Failed to create user ${userData.username}:`,
+        result.message,
+      );
     }
   }
 
@@ -89,7 +84,7 @@ async function seedPosts(userIds: string[]): Promise<void> {
   for (let i = 0; i < fakePosts.length; i++) {
     const userId = userIds[i % userIds.length];
     const postContent = fakePosts[i];
-    const id = generateUUID();
+    const id = crypto.randomUUID();
 
     const result = await Post.SAVE({
       id,
@@ -100,7 +95,9 @@ async function seedPosts(userIds: string[]): Promise<void> {
     });
 
     if (result.ok) {
-      console.log(`✅ Created post ${i + 1}: ${postContent.substring(0, 40)}...`);
+      console.log(
+        `✅ Created post ${i + 1}: ${postContent.substring(0, 40)}...`,
+      );
     } else {
       console.error(`❌ Failed to create post ${i + 1}:`, result.message);
     }

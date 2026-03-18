@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"compile": "cloesce compile",
-		"migrate:cloesce": "cloesce migrate",
+		"migrate:cloesce": "cloesce migrate db $(uuidgen)",
 		"migrate:wrangler": "wrangler d1 migrations apply tiny-tribe-db --local",
 		"dev": "vite dev",
 		"build": "vite build",
