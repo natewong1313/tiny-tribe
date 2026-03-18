@@ -797,6 +797,14 @@ export class PostAppService {
   env!: Env;
   request!: Request;
 
+  private normalizeLimit(limit: unknown, fallback: number, max: number): number {
+    if (typeof limit !== "number" || !Number.isFinite(limit)) {
+      return fallback;
+    }
+
+    return Math.max(1, Math.min(max, Math.floor(limit)));
+  }
+
   private async getUserId(): Promise<string | null> {
     const auth = getAuth();
     const session = await auth.api.getSession({
@@ -833,6 +841,54 @@ export class PostAppService {
     const posts = await orm.list(Post, {
       include: postsByOwner,
       offset: userId as unknown as number,
+      limit: normalizedLimit,
+    });
+
+    return HttpResult.ok(200, posts);
+  }
+
+  @Get()
+  async listFollowerPosts(limit?: number): Promise<HttpResult<Post[]>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    const normalizedLimit = this.normalizeLimit(limit, 50, 200);
+
+    const orm = Orm.fromEnv(this.env);
+    const postsByFollowersAndSelf: DataSource<Post> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT cte.*
+        FROM cte
+        WHERE cte."userId" = ?
+          OR EXISTS (
+            SELECT 1
+            FROM "Friendship"
+            WHERE "Friendship"."status" = 'accepted'
+              AND (
+                (
+                  "Friendship"."requesterId" = ?
+                  AND "Friendship"."addresseeId" = cte."userId"
+                )
+                OR (
+                  "Friendship"."addresseeId" = ?
+                  AND "Friendship"."requesterId" = cte."userId"
+                )
+              )
+          )
+        ORDER BY cte.created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "LastSeen", "Offset", "Limit"],
+    };
+
+    const posts = await orm.list(Post, {
+      include: postsByFollowersAndSelf,
+      offset: userId as unknown as number,
+      lastSeen: { id: userId },
       limit: normalizedLimit,
     });
 
@@ -898,16 +954,26 @@ export class PostAppService {
       includeTree: {},
       list: (joined) => `
         WITH cte AS (${joined()})
-        SELECT * FROM cte
-        WHERE LOWER(COALESCE(text_content, '')) LIKE ?
-        ORDER BY created_at DESC
+        SELECT cte.*
+        FROM cte
+        INNER JOIN "Friendship"
+          ON (
+            "Friendship"."status" = 'accepted'
+            AND (
+              ("Friendship"."requesterId" = ? AND cte."userId" = "Friendship"."addresseeId")
+              OR ("Friendship"."addresseeId" = ? AND cte."userId" = "Friendship"."requesterId")
+            )
+          )
+        WHERE LOWER(COALESCE(cte.text_content, '')) LIKE ?
+        ORDER BY cte.created_at DESC
         LIMIT ?
       `,
-      listParams: ["Offset", "Limit"],
+      listParams: ["LastSeen", "Offset", "Offset", "Limit"],
     };
 
     const posts = await orm.list(Post, {
       include: postsByQuery,
+      lastSeen: { id: userId },
       offset: searchPattern as unknown as number,
       limit: normalizedLimit,
     });

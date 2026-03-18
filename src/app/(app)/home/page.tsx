@@ -1,34 +1,50 @@
+import { Suspense } from "react";
+import { Post, PostAppService } from "@generated/client";
+import { fetchWithSession } from "@/lib/fetch";
+
 export default function HomePage() {
   return (
     <div className="flex flex-col">
       <div className="px-6 py-6 divide-y divide-stone-400/60">
-        <Post />
-        <Post />
+        <Suspense fallback={<div className="py-6 text-sm text-stone-500">Loading feed...</div>}>
+          <FeedPosts />
+        </Suspense>
       </div>
     </div>
   );
 }
 
-const Post = () => {
+async function FeedPosts() {
+  const feedResult = await PostAppService.listFollowerPosts(50, fetchWithSession);
+
+  if (!feedResult.ok) {
+    throw new Error(feedResult.message || `Failed to load feed: ${feedResult.status}`);
+  }
+
+  const posts: Post[] = feedResult.data ?? [];
+
+  return posts.length === 0 ? (
+    <p className="py-6 text-sm text-stone-500">No posts in your feed yet.</p>
+  ) : (
+    posts.map((post) => <PostItem key={post.id} post={post} />)
+  );
+}
+
+const PostItem = ({ post }: { post: Post }) => {
   return (
     <div className="py-6">
       <div className="flex items-center">
-        <img
-          src="https://avatars.githubusercontent.com/u/39974384?v=4"
-          className="h-12 w-12 rounded-full mr-2"
-        />
+        <div className="h-12 w-12 rounded-full mr-2 bg-stone-200" />
         <div>
-          <h1 className="font-semibold -mb-1">Nate Wong</h1>
-          <p className="text-sm text-stone-500">@latinalover411</p>
+          <h1 className="font-semibold -mb-1">User {post.userId}</h1>
+          <p className="text-sm text-stone-500">@{post.userId}</p>
         </div>
-        <span className="text-stone-500 text-sm ml-auto">3 hours ago</span>
+        <span className="text-stone-500 text-sm ml-auto" suppressHydrationWarning>
+          {new Date(post.created_at).toLocaleString()}
+        </span>
       </div>
       <div className="mt-2 space-y-3 p-2">
-        <p>Yo check out this big fucking goose</p>
-        <img
-          src="https://www.waterfowl.org.uk/wp-content/uploads/2019/09/african.jpg"
-          className="aspect-4/5 object-cover bg-stone-300 mx-auto rounded-md"
-        />
+        <p className="whitespace-pre-wrap">{post.text_content}</p>
       </div>
     </div>
   );
