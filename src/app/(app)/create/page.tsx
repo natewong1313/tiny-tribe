@@ -6,7 +6,7 @@ import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "vinext/shims/navigation";
-import { Post, PostMedia } from "@generated/client";
+import { PostAppService } from "@generated/client";
 import { RiCameraLine, RiImageLine, RiVideoLine } from "@remixicon/react";
 
 interface MediaItem {
@@ -29,17 +29,9 @@ export default function CreatePage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePhotoClick = () => {
-    photoInputRef.current?.click();
-  };
-
-  const handleVideoClick = () => {
-    videoInputRef.current?.click();
-  };
-
-  const handleCameraClick = () => {
-    cameraInputRef.current?.click();
-  };
+  const handlePhotoClick = () => photoInputRef.current?.click();
+  const handleVideoClick = () => videoInputRef.current?.click();
+  const handleCameraClick = () => cameraInputRef.current?.click();
 
   const handleMediaSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -57,11 +49,16 @@ export default function CreatePage() {
 
   const removeMedia = useCallback((id: string) => {
     setMediaItems((prev) => {
-      const item = prev.find((i) => i.id === id);
-      if (item) {
-        URL.revokeObjectURL(item.previewUrl);
-      }
-      return prev.filter((i) => i.id !== id);
+      let revokedUrl: string | null = null;
+      const filtered = prev.filter((i) => {
+        if (i.id === id) {
+          revokedUrl = i.previewUrl;
+          return false;
+        }
+        return true;
+      });
+      if (revokedUrl) URL.revokeObjectURL(revokedUrl);
+      return filtered;
     });
   }, []);
 
@@ -73,9 +70,6 @@ export default function CreatePage() {
       onSubmit: createPostSchema,
     },
     onSubmit: async ({ value, formApi }) => {
-      console.log("Session:", session);
-      console.log("Session user ID:", session?.user?.id);
-
       if (!session?.user?.id) {
         formApi.fieldInfo.text_content.instance?.setErrorMap({
           onSubmit: "You must be logged in to create a post",
@@ -83,49 +77,17 @@ export default function CreatePage() {
         return;
       }
 
-      const now = new Date().toISOString();
-
-      const postData = {
-        text_content: value.text_content,
-        userId: session.user.id,
-        created_at: now,
-        updated_at: now,
-      };
-      console.log("Sending Post data:", postData);
-
       try {
-        // 1. Save the Post first (no id - let DB generate it)
-        const postResult = await Post.SAVE(postData);
-        console.log("Post result:", postResult);
+        const result = await PostAppService.createPost(value.text_content, mediaItems.length);
 
-        if (!postResult.ok || !postResult.data) {
+        if (!result.ok) {
           formApi.fieldInfo.text_content.instance?.setErrorMap({
-            onSubmit: postResult.message || "Failed to create post",
+            onSubmit: result.message || "Failed to create post",
           });
           return;
         }
 
-        const postId = postResult.data.id;
-        console.log("Created post with ID:", postId);
-
-        // 2. Save each PostMedia (no id - let DB generate it)
-        for (const _mediaItem of mediaItems) {
-          const mediaData = {
-            postId: postId,
-            created_at: now,
-            updated_at: now,
-          };
-          console.log("Sending PostMedia data:", mediaData);
-
-          const mediaResult = await PostMedia.SAVE(mediaData);
-          console.log("PostMedia result:", mediaResult);
-
-          if (!mediaResult.ok) {
-            console.error("Failed to save media:", mediaResult.message);
-          }
-        }
-
-        // 3. Redirect to home after success
+        // Redirect to home after success
         router.push("/home");
         router.refresh();
       } catch {
@@ -183,7 +145,7 @@ export default function CreatePage() {
           )}
         </form.Field>
 
-        {mediaItems.length > 0 && (
+        {mediaItems.length > 0 ? (
           <div className="mt-4 grid grid-cols-3 gap-2">
             {mediaItems.map((item) => (
               <div key={item.id} className="relative aspect-square">
@@ -192,9 +154,7 @@ export default function CreatePage() {
                     src={item.previewUrl}
                     className="w-full h-full object-cover rounded-lg"
                     controls
-                  >
-                    <track kind="captions" src="" label="No captions" />
-                  </video>
+                  />
                 ) : (
                   <img
                     src={item.previewUrl}
@@ -212,7 +172,7 @@ export default function CreatePage() {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
 
         <div className="mt-6 pt-4 border-t border-stone-300">
           <div className="flex gap-2">

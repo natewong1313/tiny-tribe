@@ -362,4 +362,52 @@ export class PostAppService {
 
     return HttpResult.ok(200, posts);
   }
+
+  @Get()
+  async createPost(text_content: string, mediaCount: number = 0): Promise<HttpResult<Post>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (!text_content || text_content.trim().length === 0) {
+      return HttpResult.fail(400, "Post content is required");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const now = new Date().toISOString();
+
+    try {
+      // 1. Create the Post first
+      const post = await orm.upsert(Post, {
+        id: crypto.randomUUID(),
+        text_content: text_content.trim(),
+        userId,
+        created_at: now,
+        updated_at: now,
+      });
+
+      if (!post) {
+        return HttpResult.fail(500, "Failed to create post");
+      }
+
+      // 2. Create PostMedia entries in parallel if there are media items
+      if (mediaCount > 0) {
+        const mediaPromises = Array.from({ length: mediaCount }, () =>
+          orm.upsert(PostMedia, {
+            id: crypto.randomUUID(),
+            postId: post.id,
+            created_at: now,
+            updated_at: now,
+          }),
+        );
+
+        await Promise.all(mediaPromises);
+      }
+
+      return HttpResult.ok(201, post);
+    } catch (error) {
+      return HttpResult.fail(500, error instanceof Error ? error.message : "Failed to create post");
+    }
+  }
 }
