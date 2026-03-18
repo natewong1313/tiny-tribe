@@ -9,8 +9,8 @@ import { useSession } from "@/lib/auth-client";
 import { UserAppService } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
 import useSWR from "swr";
-import { FilePondUpload } from "./FilePondUpload";
-import { CheckmarkIcon } from "./CheckmarkIcon";
+import { FilePondUpload } from "./_components/FilePondUpload";
+import { CheckmarkIcon } from "./_components/CheckmarkIcon";
 
 const USERNAME_REGEX = /[^a-zA-Z0-9_]/g;
 
