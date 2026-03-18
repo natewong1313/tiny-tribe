@@ -92,20 +92,16 @@ const SignInPage = () => {
                   Forgot password?
                 </Link>
               </div>
-              <input
-                id={field.name}
+              <Input
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 type="password"
                 autoComplete="current-password"
-                className="w-full px-4 py-2 bg-neutral-300 outline-none border-0 rounded-sm focus:ring-2 focus:ring-tt-green-500 transition-colors"
                 placeholder="Enter your password"
+                errors={field.state.meta.errors}
               />
-              {field.state.meta.errors.length > 0 && (
-                <p className="mt-1 text-sm text-red-600">{field.state.meta.errors.join(", ")}</p>
-              )}
             </div>
           )}
         </form.Field>

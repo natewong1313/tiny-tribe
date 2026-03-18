@@ -29,18 +29,6 @@ export class User {
   sentFriendRequests!: Friendship[];
   receivedFriendRequests!: Friendship[];
 
-  static authPolicy() {
-    return {
-      allowMethods: ["GET", "SAVE", "uploadPhoto", "downloadPhoto"],
-      ownerField: "id",
-      save: {
-        idField: "id",
-        validateUsername: true,
-      },
-      customPathOwnerMethods: ["uploadPhoto", "downloadPhoto"],
-    };
-  }
-
   @R2("user/photos/{id}.png", "bucket")
   photo!: R2ObjectBody | undefined;
 
@@ -73,16 +61,6 @@ export class Post {
 
   media!: PostMedia[];
 
-  static authPolicy() {
-    return {
-      allowMethods: ["GET", "SAVE"],
-      ownerField: "userId",
-      save: {
-        idField: "id",
-      },
-    };
-  }
-
   static fromJson(data: any): Post {
     return Object.assign(new Post(), data);
   }
@@ -103,20 +81,6 @@ export class PostMedia {
 
   created_at!: Date;
   updated_at!: Date;
-
-  static authPolicy() {
-    return {
-      allowMethods: ["GET", "SAVE"],
-      ownerRelation: {
-        relationField: "postId",
-        relationModel: "Post",
-        relationOwnerField: "userId",
-      },
-      save: {
-        idField: "id",
-      },
-    };
-  }
 
   static fromJson(data: any): PostMedia {
     return Object.assign(new PostMedia(), data);
@@ -141,12 +105,6 @@ export class Friendship {
   created_at!: Date;
   updated_at!: Date;
 
-  static authPolicy() {
-    return {
-      internal: true,
-    };
-  }
-
   static fromJson(data: any): Friendship {
     return Object.assign(new Friendship(), data);
   }
@@ -161,12 +119,6 @@ export class BetterAuthUser {
   image!: string | null;
   created_at!: Date;
   updated_at!: Date;
-
-  static authPolicy() {
-    return {
-      internal: true,
-    };
-  }
 }
 
 @Model("db")
@@ -179,12 +131,6 @@ export class BetterAuthSession {
   ip_address!: string | null;
   user_agent!: string | null;
   user_id!: string;
-
-  static authPolicy() {
-    return {
-      internal: true,
-    };
-  }
 }
 
 @Model("db")
@@ -202,12 +148,6 @@ export class BetterAuthAccount {
   password!: string | null;
   created_at!: Date;
   updated_at!: Date;
-
-  static authPolicy() {
-    return {
-      internal: true,
-    };
-  }
 }
 
 @Model("db")
@@ -218,10 +158,4 @@ export class BetterAuthVerification {
   expires_at!: Date;
   created_at!: Date;
   updated_at!: Date;
-
-  static authPolicy() {
-    return {
-      internal: true,
-    };
-  }
 }
