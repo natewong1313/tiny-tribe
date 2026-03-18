@@ -1,6 +1,5 @@
 "use client";
 
-import { memo } from "react";
 import { useQueryState } from "nuqs";
 import useSWR from "swr";
 import { Input } from "@/components/input";
@@ -10,54 +9,9 @@ import {
   SearchUserWithPhotoResponse,
   UserAppService,
 } from "@generated/client";
-import { RiSearchLine, RiUserLine } from "@remixicon/react";
+import { RiSearchLine } from "@remixicon/react";
 import ShapeSvg from "@/assets/shape1.svg?react";
-
-// Extracted components for better organization and React Compiler optimization
-const UserResultItem = memo(function UserResultItem({
-  user,
-}: {
-  user: SearchUserWithPhotoResponse;
-}) {
-  return (
-    <div className="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-200 p-3 hover:bg-stone-50">
-      <div className="w-12 h-12 rounded-full bg-stone-300 flex items-center justify-center">
-        {user.photoDataUrl ? (
-          <img
-            src={user.photoDataUrl}
-            alt={user.user.name || user.user.email}
-            className="w-full h-full rounded-full object-cover"
-          />
-        ) : (
-          <RiUserLine size={24} className="text-gray-500" />
-        )}
-      </div>
-      <div className="flex-1">
-        <p className="text-pretty font-medium text-gray-900">{user.user.name || user.user.email}</p>
-        <p className="text-pretty text-sm text-gray-500">
-          {user.user.username ? `@${user.user.username}` : user.user.email}
-        </p>
-      </div>
-    </div>
-  );
-});
-
-const PostResultItem = memo(function PostResultItem({ post }: { post: Post }) {
-  return (
-    <div className="cursor-pointer rounded-lg border border-stone-200 p-4 hover:bg-stone-50">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-full bg-stone-300 flex items-center justify-center">
-          <RiUserLine size={16} className="text-gray-500" />
-        </div>
-        <span className="text-sm text-gray-600 tabular-nums">User {post.userId}</span>
-      </div>
-      <p className="text-pretty text-gray-800">{post.text_content}</p>
-      <p className="mt-2 text-xs text-gray-400 tabular-nums">
-        {new Date(post.created_at).toLocaleDateString()}
-      </p>
-    </div>
-  );
-});
+import { UserResultItem, PostResultItem } from "./_components";
 
 // SWR fetcher for parallel search
 async function searchFetcher(

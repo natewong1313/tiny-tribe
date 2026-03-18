@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { RiImageAddLine } from "@remixicon/react";
 import { User, UserAppService } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
@@ -20,6 +20,8 @@ export default function EditProfileForm({
   initialPhotoDataUrl,
 }: EditProfileFormProps) {
   const router = useRouter();
+  const nameId = useId();
+  const usernameId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState(initialName);
@@ -44,10 +46,6 @@ export default function EditProfileForm({
       return;
     }
 
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl);
-    }
-
     setSelectedPhoto(file);
     setPhotoPreviewUrl(URL.createObjectURL(file));
   };
@@ -56,9 +54,6 @@ export default function EditProfileForm({
     setName(initialName);
     setUsername(initialUsername);
     setSelectedPhoto(null);
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl);
-    }
     setPhotoPreviewUrl(null);
     setError(null);
   };
@@ -171,11 +166,11 @@ export default function EditProfileForm({
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="profile-name" className="text-sm font-medium text-stone-700">
+        <label htmlFor={nameId} className="text-sm font-medium text-stone-700">
           Name
         </label>
         <input
-          id="profile-name"
+          id={nameId}
           name="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -185,11 +180,11 @@ export default function EditProfileForm({
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="profile-username" className="text-sm font-medium text-stone-700">
+        <label htmlFor={usernameId} className="text-sm font-medium text-stone-700">
           Username
         </label>
         <input
-          id="profile-username"
+          id={usernameId}
           name="username"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
