@@ -30,9 +30,7 @@ const ResetPasswordPage = () => {
 
   useEffect(() => {
     if ("INVALID_TOKEN" === errorParam) {
-      setTokenError(
-        "This reset link has expired or is invalid. Please request a new one.",
-      );
+      setTokenError("This reset link has expired or is invalid. Please request a new one.");
     }
   }, [errorParam]);
 
@@ -75,16 +73,11 @@ const ResetPasswordPage = () => {
 
   if (isSuccess) {
     return (
-      <AuthLayout
-        title="Password reset successful"
-        subtitle="Your password has been updated"
-      >
+      <AuthLayout title="Password reset successful" subtitle="Your password has been updated">
         <div className="text-center">
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Password updated!</p>
-            <p className="text-sm mt-1">
-              Your password has been successfully reset.
-            </p>
+            <p className="text-sm mt-1">Your password has been successfully reset.</p>
           </div>
 
           <Link
@@ -100,10 +93,7 @@ const ResetPasswordPage = () => {
 
   if (tokenError) {
     return (
-      <AuthLayout
-        title="Invalid reset link"
-        subtitle="This password reset link is invalid"
-      >
+      <AuthLayout title="Invalid reset link" subtitle="This password reset link is invalid">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">{tokenError}</p>
@@ -122,16 +112,11 @@ const ResetPasswordPage = () => {
 
   if (!token) {
     return (
-      <AuthLayout
-        title="Invalid reset link"
-        subtitle="This password reset link is invalid"
-      >
+      <AuthLayout title="Invalid reset link" subtitle="This password reset link is invalid">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Invalid or expired link</p>
-            <p className="text-sm mt-1">
-              Please request a new password reset link.
-            </p>
+            <p className="text-sm mt-1">Please request a new password reset link.</p>
           </div>
 
           <Link
@@ -146,10 +131,7 @@ const ResetPasswordPage = () => {
   }
 
   return (
-    <AuthLayout
-      title="Reset your password"
-      subtitle="Enter your new password below"
-    >
+    <AuthLayout title="Reset your password" subtitle="Enter your new password below">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -191,25 +173,16 @@ const ResetPasswordPage = () => {
           )}
         </form.Field>
 
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit || isSubmitting}
-              isLoading={isSubmitting}
-            >
+            <Button type="submit" disabled={!canSubmit || isSubmitting} isLoading={isSubmitting}>
               {isSubmitting ? "Resetting..." : "Reset password"}
             </Button>
           )}
         </form.Subscribe>
 
         <div className="text-center">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium text-tt-green-500 hover:underline"
-          >
+          <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
             Back to sign in
           </Link>
         </div>

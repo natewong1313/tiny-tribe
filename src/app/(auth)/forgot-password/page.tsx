@@ -47,10 +47,7 @@ const ForgotPasswordPage = () => {
 
   if (isSubmitted) {
     return (
-      <AuthLayout
-        title="Check your email"
-        subtitle="We've sent you a password reset link"
-      >
+      <AuthLayout title="Check your email" subtitle="We've sent you a password reset link">
         <div className="text-center">
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Reset link sent!</p>
@@ -72,10 +69,7 @@ const ForgotPasswordPage = () => {
           </button>
 
           <div className="mt-8">
-            <Link
-              href="/sign-in"
-              className="text-sm font-medium text-tt-green-500 hover:underline"
-            >
+            <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
               Back to sign in
             </Link>
           </div>
@@ -113,25 +107,16 @@ const ForgotPasswordPage = () => {
           )}
         </form.Field>
 
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit || isSubmitting}
-              isLoading={isSubmitting}
-            >
+            <Button type="submit" disabled={!canSubmit || isSubmitting} isLoading={isSubmitting}>
               {isSubmitting ? "Sending..." : "Send reset link"}
             </Button>
           )}
         </form.Subscribe>
 
         <div className="text-center">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium text-tt-green-500 hover:underline"
-          >
+          <Link href="/sign-in" className="text-sm font-medium text-tt-green-500 hover:underline">
             Back to sign in
           </Link>
         </div>

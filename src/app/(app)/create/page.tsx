@@ -41,22 +41,19 @@ export default function CreatePage() {
     cameraInputRef.current?.click();
   };
 
-  const handleMediaSelect = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (files) {
-        const newItems: MediaItem[] = Array.from(files).map((file) => ({
-          id: `${file.name}-${file.lastModified}-${Math.random().toString(36).substr(2, 9)}`,
-          file,
-          previewUrl: URL.createObjectURL(file),
-          type: file.type.startsWith("video/") ? "video" : "image",
-        }));
-        setMediaItems((prev) => [...prev, ...newItems]);
-      }
-      event.target.value = "";
-    },
-    [],
-  );
+  const handleMediaSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const newItems: MediaItem[] = Array.from(files).map((file) => ({
+        id: `${file.name}-${file.lastModified}-${Math.random().toString(36).substr(2, 9)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        type: file.type.startsWith("video/") ? "video" : "image",
+      }));
+      setMediaItems((prev) => [...prev, ...newItems]);
+    }
+    event.target.value = "";
+  }, []);
 
   const removeMedia = useCallback((id: string) => {
     setMediaItems((prev) => {
@@ -143,9 +140,7 @@ export default function CreatePage() {
     <div className="min-h-screen">
       <div className="bg-stone-300 border-b border-stone-400/50 p-4 flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-800">Create Post</h1>
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"
@@ -182,9 +177,7 @@ export default function CreatePage() {
                 rows={6}
               />
               {field.state.meta.errors.length > 0 && (
-                <p className="mt-1 text-sm text-red-600">
-                  {field.state.meta.errors.join(", ")}
-                </p>
+                <p className="mt-1 text-sm text-red-600">{field.state.meta.errors.join(", ")}</p>
               )}
             </div>
           )}

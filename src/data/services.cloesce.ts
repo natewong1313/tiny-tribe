@@ -103,9 +103,7 @@ export class UserAppService {
 
     try {
       const arrayBuffer = await user.photo.arrayBuffer();
-      const base64 = btoa(
-        String.fromCharCode(...new Uint8Array(arrayBuffer))
-      );
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       const dataUrl = `data:image/png;base64,${base64}`;
       return HttpResult.ok(200, dataUrl);
     } catch {
@@ -135,9 +133,7 @@ export class UserAppService {
     if (user.photo) {
       try {
         const arrayBuffer = await user.photo.arrayBuffer();
-        const base64 = btoa(
-          String.fromCharCode(...new Uint8Array(arrayBuffer))
-        );
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
         photoDataUrl = `data:image/png;base64,${base64}`;
       } catch {
         // If photo processing fails, still return user without photo

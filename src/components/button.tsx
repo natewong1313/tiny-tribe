@@ -19,10 +19,8 @@ export const Button = ({
     "w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
   const variants = {
-    primary:
-      "text-white bg-tt-green-600 hover:bg-tt-green-700 focus:ring-tt-green-500",
-    secondary:
-      "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:ring-tt-green-500",
+    primary: "text-white bg-tt-green-600 hover:bg-tt-green-700 focus:ring-tt-green-500",
+    secondary: "text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:ring-tt-green-500",
     black: "text-white bg-black hover:bg-gray-800 focus:ring-gray-500",
   };
 

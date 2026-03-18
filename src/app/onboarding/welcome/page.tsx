@@ -1,11 +1,7 @@
 "use client";
 
 import { Button } from "@/components/button";
-import {
-  RiArrowRightFill,
-  RiArrowRightLine,
-  RiArrowRightLongFill,
-} from "@remixicon/react";
+import { RiArrowRightFill, RiArrowRightLine, RiArrowRightLongFill } from "@remixicon/react";
 import { motion } from "motion/react";
 import { useRouter } from "vinext/shims/navigation";
 
@@ -45,8 +41,7 @@ const WelcomePage = () => {
           }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          Before you can start using the app, we'll need to get your profile
-          setup.
+          Before you can start using the app, we'll need to get your profile setup.
         </motion.p>
         <motion.div
           variants={{

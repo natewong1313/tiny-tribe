@@ -25,9 +25,7 @@ export default async function ProfilePage() {
             <RiUserLine size={48} className="text-gray-500" />
           </div>
         )}
-        <h1 className="mt-4 text-2xl font-bold text-gray-800">
-          {user.name || user.email}
-        </h1>
+        <h1 className="mt-4 text-2xl font-bold text-gray-800">{user.name || user.email}</h1>
         <p className="text-gray-600">{user.email}</p>
       </div>
     </div>

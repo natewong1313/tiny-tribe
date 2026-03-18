@@ -36,10 +36,7 @@ const NavButton = (props: NavButtonProps) => {
   return (
     <Link
       href={props.href}
-      className={cn(
-        "items-center justify-center px-2.5 py-2.5 flex flex-col",
-        className,
-      )}
+      className={cn("items-center justify-center px-2.5 py-2.5 flex flex-col", className)}
     >
       <Icon size={20} />
       <span className="text-xs mt-1">{props.title}</span>

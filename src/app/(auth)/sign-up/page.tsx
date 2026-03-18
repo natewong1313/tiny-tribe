@@ -133,15 +133,9 @@ const SignUpPage = () => {
           )}
         </form.Field>
 
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit || isSubmitting}
-              isLoading={isSubmitting}
-            >
+            <Button type="submit" disabled={!canSubmit || isSubmitting} isLoading={isSubmitting}>
               {isSubmitting ? "Creating account..." : "Create account"}
             </Button>
           )}
@@ -149,10 +143,7 @@ const SignUpPage = () => {
 
         <p className="text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link
-            href="/sign-in"
-            className="font-medium text-tt-green-600 hover:underline"
-          >
+          <Link href="/sign-in" className="font-medium text-tt-green-600 hover:underline">
             Sign in
           </Link>
         </p>

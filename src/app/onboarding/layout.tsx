@@ -2,11 +2,7 @@ import { redirect } from "vinext/shims/navigation";
 import { UserAppService } from "@generated/client";
 import { fetchWithSession } from "@/lib/fetch";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const result = await UserAppService.hasOnboarded(fetchWithSession);
 
   if (!result.ok) {
@@ -20,7 +16,5 @@ export default async function AppLayout({
     return redirect("/home");
   }
 
-  return (
-    <div className="min-h-screen flex flex-col bg-stone-200">{children}</div>
-  );
+  return <div className="min-h-screen flex flex-col bg-stone-200">{children}</div>;
 }

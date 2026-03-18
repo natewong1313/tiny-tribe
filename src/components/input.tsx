@@ -31,18 +31,13 @@ export const Input = ({
   return (
     <div className={className}>
       {label && (
-        <label
-          htmlFor={name}
-          className="block text-sm font-medium text-tt-green-700 mb-1"
-        >
+        <label htmlFor={name} className="block text-sm font-medium text-tt-green-700 mb-1">
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-            {icon}
-          </div>
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{icon}</div>
         )}
         <input
           id={name}
@@ -62,16 +57,12 @@ export const Input = ({
           {errors
             .filter(Boolean)
             .map((err) =>
-              typeof err === "string"
-                ? err
-                : (err as { message?: string }).message || String(err),
+              typeof err === "string" ? err : (err as { message?: string }).message || String(err),
             )
             .join(", ")}
         </p>
       )}
-      {helperText && !hasError && (
-        <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-      )}
+      {helperText && !hasError && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
     </div>
   );
 };

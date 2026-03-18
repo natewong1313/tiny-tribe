@@ -38,11 +38,10 @@ const FormPage = () => {
   const photoLabelId = useId();
   const { data: session } = useSession();
   const [files, setFiles] = useState<File[]>([]);
-  const [usernameCheckState, setUsernameCheckState] =
-    useState<UsernameCheckState>({
-      status: "idle",
-      error: null,
-    });
+  const [usernameCheckState, setUsernameCheckState] = useState<UsernameCheckState>({
+    status: "idle",
+    error: null,
+  });
   const usernameCheckIdRef = useRef(0);
 
   const checkUsernameAvailability = async (username: string) => {
@@ -153,10 +152,7 @@ const FormPage = () => {
       <form.Field name="photo">
         {(field) => (
           <div className="space-y-2">
-            <span
-              id={photoLabelId}
-              className="block text-sm font-medium text-gray-700"
-            >
+            <span id={photoLabelId} className="block text-sm font-medium text-gray-700">
               Profile Photo
             </span>
             <div className="w-42.5 h-42.5 mx-auto">
@@ -164,9 +160,7 @@ const FormPage = () => {
                 className="custom-filepond-bg"
                 files={files}
                 onupdatefiles={(fileItems) => {
-                  const newFiles = fileItems.map(
-                    (fileItem) => fileItem.file as File,
-                  );
+                  const newFiles = fileItems.map((fileItem) => fileItem.file as File);
                   setFiles(newFiles);
                   field.handleChange(newFiles[0]?.name ?? "");
                 }}
@@ -189,8 +183,7 @@ const FormPage = () => {
                     return firstError;
                   }
                   return (
-                    (firstError as { message?: string } | undefined)?.message ||
-                    String(firstError)
+                    (firstError as { message?: string } | undefined)?.message || String(firstError)
                   );
                 })()}
               </p>
@@ -228,12 +221,7 @@ const FormPage = () => {
             />
             {usernameCheckState.status === "available" && (
               <p className="mt-1 inline-flex items-center gap-1 text-sm text-green-600">
-                <svg
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
+                <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path
                     fillRule="evenodd"
                     d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42L8.5 12.09l6.79-6.8a1 1 0 011.414 0z"
@@ -261,9 +249,7 @@ const FormPage = () => {
         )}
       </form.Field>
       <div className="mt-auto">
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button
               isLoading={isSubmitting}

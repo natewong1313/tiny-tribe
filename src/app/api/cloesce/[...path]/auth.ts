@@ -350,9 +350,7 @@ const authorizeServiceRequest = (route: RouteInfo): Response | null => {
   return null;
 };
 
-export const authorizeCloesceRequest = async (
-  request: Request,
-): Promise<Response | null> => {
+export const authorizeCloesceRequest = async (request: Request): Promise<Response | null> => {
   if (request.method === "OPTIONS") {
     return null;
   }

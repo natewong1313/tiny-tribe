@@ -1,9 +1,6 @@
 import { headers } from "vinext/shims/headers";
 
-export const fetchWithSession = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => {
+export const fetchWithSession = (input: RequestInfo | URL, init?: RequestInit) => {
   const cookie = headers().get("cookie");
   const mergedHeaders = new Headers(init?.headers);
   if (cookie) {
