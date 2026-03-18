@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Mulish, Outfit, Work_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
+const geistSans = Work_Sans({
   subsets: ["latin"],
   variable: "--font-geist-sans",
 });
@@ -23,7 +23,11 @@ const RootLayout = ({
   children: React.ReactNode;
 }>) => (
   <html lang="en">
-    <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
+    >
+      {children}
+    </body>
   </html>
 );
 

@@ -45,6 +45,11 @@
       "source": "cloudflare/vinext",
       "sourceType": "github",
       "computedHash": "4524e7c1fdce88dd9bea2aae30cf7895df5e8d0839eebdb5191c30cf2c694151"
+    },
+    "next-best-practices": {
+      "source": "vercel-labs/next-skills",
+      "sourceType": "github",
+      "computedHash": "515ba75178bd44875812d9a560bdf14651f86709f89cf1d4f209638e879807f3"
     }
   }
 }

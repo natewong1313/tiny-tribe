@@ -46,8 +46,13 @@ const MODEL_REGISTRY: Record<string, ModelCtorWithAuth> = Object.fromEntries(
 ) as Record<string, ModelCtorWithAuth>;
 
 const SERVICE_ALLOWED_METHODS: Record<string, Set<string>> = {
-  PostAppService: new Set(["listMyPosts", "listMyPostMedia"]),
-  UserAppService: new Set(["hasOnboarded", "isUsernameAvailable"]),
+  PostAppService: new Set(["listMyPosts", "listMyPostMedia", "searchPostsByText"]),
+  UserAppService: new Set([
+    "hasOnboarded",
+    "isUsernameAvailable",
+    "getProfileWithPhoto",
+    "searchUsers",
+  ]),
 };
 
 const badRequest = () => new Response("Bad Request", { status: 400 });
