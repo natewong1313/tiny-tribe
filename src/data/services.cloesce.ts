@@ -9,6 +9,11 @@ export class ProfileWithPhotoResponse {
   photoDataUrl!: string | null;
 }
 
+export class SearchUserWithPhotoResponse {
+  user!: User;
+  photoDataUrl!: string | null;
+}
+
 @Service
 export class UserAppService {
   env!: Env;
@@ -189,6 +194,49 @@ export class UserAppService {
     });
 
     return HttpResult.ok(200, users);
+  }
+
+  @Get()
+  async searchUsersWithPhoto(
+    query: string,
+    limit?: number,
+  ): Promise<HttpResult<SearchUserWithPhotoResponse[]>> {
+    const usersResult = await this.searchUsers(query, limit);
+
+    if (!usersResult.ok) {
+      return HttpResult.fail(usersResult.status, usersResult.message || "Failed to search users");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const users = usersResult.data ?? [];
+
+    const usersWithPhoto = await Promise.all(
+      users.map(async (user) => {
+        let photoDataUrl: string | null = null;
+
+        try {
+          const userWithPhoto = await orm.get(User, {
+            primaryKey: { id: user.id },
+            include: { photo: {} },
+          });
+
+          if (userWithPhoto?.photo) {
+            const arrayBuffer = await userWithPhoto.photo.arrayBuffer();
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+            photoDataUrl = `data:image/png;base64,${base64}`;
+          }
+        } catch {
+          photoDataUrl = null;
+        }
+
+        const result = new SearchUserWithPhotoResponse();
+        result.user = user;
+        result.photoDataUrl = photoDataUrl;
+        return result;
+      }),
+    );
+
+    return HttpResult.ok(200, usersWithPhoto);
   }
 }
 

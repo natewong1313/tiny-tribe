@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Mulish, Outfit, Work_Sans } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
 const geistSans = Work_Sans({
@@ -24,7 +25,7 @@ const RootLayout = ({
 }>) => (
   <html lang="en">
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}>
-      {children}
+      <NuqsAdapter>{children}</NuqsAdapter>
     </body>
   </html>
 );

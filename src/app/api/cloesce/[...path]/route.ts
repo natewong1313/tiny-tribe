@@ -1,4 +1,3 @@
-import { authorizeCloesceRequest } from "./auth";
 import { getCloesceApp } from "@/lib/cloesce-runtime";
 import type { CloesceApp } from "cloesce/backend";
 import { env } from "cloudflare:workers";
@@ -6,11 +5,6 @@ import { env } from "cloudflare:workers";
 const getApp = async (): Promise<CloesceApp> => getCloesceApp();
 
 const handler = async (request: Request): Promise<Response> => {
-  const authorizationError = await authorizeCloesceRequest(request);
-  if (authorizationError) {
-    return authorizationError;
-  }
-
   const app = await getApp();
   const result = await app.run(request, env);
   if (!result.ok) {
