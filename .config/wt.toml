@@ -1,0 +1,4 @@
+[post-start]
+copy = "wt step copy-ignored"
+install = "bun install && bun run compile"
+env = "printf 'PORT={{ branch | hash_port }}\nBETTER_AUTH_SECRET=PVfkXlBdWMFVmXlV5cClMbiZB7C3bgp2QVTF3WAn8IA=\nBETTER_AUTH_URL=http://localhost:{{ branch | hash_port }}\nCLOESCE_WORKER_URL=http://localhost:{{ branch | hash_port }}/api/cloesce\n' > .env"

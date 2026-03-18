@@ -9,8 +9,6 @@ bun run migrate:wrangler
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the app.
-
 ## Development
 If you add new models to `src/data/models.cloesce.ts`, you'll need to run migrations with
 ```bash
