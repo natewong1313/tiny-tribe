@@ -98,9 +98,21 @@ export default function CreatePage() {
     });
   }, []);
 
-  const handleTextChange = useCallback((value: string, fieldHandler: (value: string) => void) => {
-    fieldHandler(value);
-  }, []);
+  const handleTextChange = useCallback(
+    async (value: string, fieldHandler: (value: string) => void) => {
+      fieldHandler(value);
+
+      const urls = extractUrls(value);
+      if (urls.length === 0) {
+        setLinkPreviews([]);
+        return;
+      }
+
+      const previews = await Promise.all(urls.map(fetchLinkPreview));
+      setLinkPreviews(previews.filter((preview): preview is LinkPreview => preview !== null));
+    },
+    [],
+  );
 
   const form = useForm({
     defaultValues: {
@@ -184,45 +196,24 @@ export default function CreatePage() {
         }}
         className="p-4"
       >
-        <form.Subscribe selector={(state) => state.values.text_content}>
-          {(textContent) => {
-            useEffect(() => {
-              const urls = extractUrls(textContent);
-
-              if (urls.length === 0) {
-                setLinkPreviews([]);
-                return;
-              }
-
-              Promise.all(urls.map(fetchLinkPreview)).then((previews) =>
-                setLinkPreviews(previews.filter((p): p is LinkPreview => p !== null)),
-              );
-            }, [textContent]);
-
-            return (
-              <form.Field name="text_content">
-                {(field) => (
-                  <div>
-                    <textarea
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => handleTextChange(e.target.value, field.handleChange)}
-                      placeholder="What's on your mind?"
-                      className="w-full min-h-[200px] p-4 text-sm placeholder-gray-400 border-0 focus:ring-0 focus:outline-none resize-none"
-                      rows={6}
-                    />
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {field.state.meta.errors.join(", ")}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-            );
-          }}
-        </form.Subscribe>
+        <form.Field name="text_content">
+          {(field) => (
+            <div>
+              <textarea
+                name={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => handleTextChange(e.target.value, field.handleChange)}
+                placeholder="What's on your mind?"
+                className="w-full min-h-[200px] p-4 text-sm placeholder-gray-400 border-0 focus:ring-0 focus:outline-none resize-none"
+                rows={6}
+              />
+              {field.state.meta.errors.length > 0 && (
+                <p className="mt-1 text-sm text-red-600">{field.state.meta.errors.join(", ")}</p>
+              )}
+            </div>
+          )}
+        </form.Field>
 
         {linkPreviews.length > 0 && (
           <div className="mt-4 space-y-2">
@@ -245,6 +236,7 @@ export default function CreatePage() {
             ))}
           </div>
         )}
+
 
         {mediaItems.length > 0 ? (
           <div className="mt-4 grid grid-cols-3 gap-2">

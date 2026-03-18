@@ -1,0 +1,104 @@
+import { Post, PostAppService, UserAppService } from "@generated/client";
+import { fetchWithSession } from "@/lib/fetch";
+import { RiUserLine } from "@remixicon/react";
+import SendFriendRequestButton from "./_components/send-friend-request-button";
+
+interface UserProfilePageProps {
+  params: Promise<{
+    userId: string;
+  }>;
+}
+
+export default async function UserProfilePage({ params }: UserProfilePageProps) {
+  const { userId } = await params;
+
+  const profileResult = await UserAppService.getUserProfileByIdWithPhoto(userId, fetchWithSession);
+  if (!profileResult.ok) {
+    throw new Error(profileResult.message || `Failed to load profile: ${profileResult.status}`);
+  }
+
+  const profile = profileResult.data;
+  if (!profile) {
+    throw new Error("Profile was not returned");
+  }
+
+  const canViewPosts =
+    profile.friendshipStatus === "accepted" || profile.friendshipStatus === "self";
+
+  let posts: Post[] = [];
+
+  if (canViewPosts) {
+    const postsResult = await PostAppService.listPostsForUserIfFriend(userId, 50, fetchWithSession);
+    if (!postsResult.ok) {
+      throw new Error(postsResult.message || `Failed to load posts: ${postsResult.status}`);
+    }
+
+    posts = postsResult.data ?? [];
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6">
+      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex items-start gap-4">
+          {profile.photoDataUrl ? (
+            <img
+              src={profile.photoDataUrl}
+              alt={profile.user.name || "Profile"}
+              className="h-20 w-20 rounded-full object-cover sm:h-24 sm:w-24"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-stone-200 sm:h-24 sm:w-24">
+              <RiUserLine size={40} className="text-stone-500" />
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-semibold text-stone-900">
+              {profile.user.name || profile.user.email}
+            </h1>
+            <p className="mt-1 truncate text-sm text-stone-600">
+              {profile.user.username ? `@${profile.user.username}` : profile.user.email}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-stone-200 pt-4">
+          {profile.friendshipStatus === "none" ? (
+            <SendFriendRequestButton targetUserId={profile.user.id} />
+          ) : profile.friendshipStatus === "pending_outgoing" ? (
+            <p className="text-sm font-medium text-stone-600">Friend request sent</p>
+          ) : profile.friendshipStatus === "pending_incoming" ? (
+            <p className="text-sm font-medium text-stone-600">
+              This user sent you a friend request
+            </p>
+          ) : profile.friendshipStatus === "accepted" ? (
+            <p className="text-sm font-medium text-tt-green-700">Friends</p>
+          ) : profile.friendshipStatus === "blocked" ? (
+            <p className="text-sm font-medium text-stone-600">Profile unavailable</p>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+        <h2 className="text-lg font-semibold text-stone-900">Posts</h2>
+
+        {!canViewPosts ? (
+          <p className="mt-3 text-sm text-stone-500">Become friends to view posts.</p>
+        ) : posts.length === 0 ? (
+          <p className="mt-3 text-sm text-stone-500">No posts yet.</p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {posts.map((post) => (
+              <article key={post.id} className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                <p className="whitespace-pre-wrap text-sm text-stone-800">{post.text_content}</p>
+                <p className="mt-2 text-xs text-stone-500" suppressHydrationWarning>
+                  {new Date(post.created_at).toLocaleString()}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}

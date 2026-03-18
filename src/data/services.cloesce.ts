@@ -15,6 +15,12 @@ export class SearchUserWithPhotoResponse {
   photoDataUrl!: string | null;
 }
 
+export class UserProfileByIdWithPhotoResponse {
+  user!: User;
+  photoDataUrl!: string | null;
+  friendshipStatus!: string;
+}
+
 export class CompleteOnboardingResponse {
   user!: User;
 }
@@ -397,32 +403,57 @@ export class UserAppService {
     query: string,
     limit?: number,
   ): Promise<HttpResult<SearchUserWithPhotoResponse[]>> {
-    const usersResult = await this.searchUsers(query, limit);
-
-    if (!usersResult.ok) {
-      return HttpResult.fail(usersResult.status, usersResult.message || "Failed to search users");
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
     }
 
-    const orm = Orm.fromEnv(this.env);
-    const users = usersResult.data ?? [];
+    const trimmedQuery = typeof query === "string" ? query.trim() : "";
+    if (!trimmedQuery) {
+      return HttpResult.ok(200, []);
+    }
 
+    const normalizedLimit = this.normalizeLimit(limit, 25, 100);
+    const searchPattern = `%${trimmedQuery.toLowerCase()}%`;
+    const orm = Orm.fromEnv(this.env);
+
+    // Single query to fetch users with photos - avoids N+1 problem
+    const usersWithPhotoSource: DataSource<User> = {
+      includeTree: { photo: {} },
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT * FROM cte
+        WHERE id != ?
+          AND (
+            LOWER(COALESCE(name, '')) LIKE ?
+            OR LOWER(COALESCE(username, '')) LIKE ?
+          )
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["LastSeen", "Offset", "Offset", "Limit"],
+    };
+
+    const users = await orm.list(User, {
+      include: usersWithPhotoSource,
+      lastSeen: { id: userId },
+      offset: searchPattern as unknown as number,
+      limit: normalizedLimit,
+    });
+
+    // Process photos in parallel (CPU work, not DB queries)
     const usersWithPhoto = await Promise.all(
       users.map(async (user) => {
         let photoDataUrl: string | null = null;
 
-        try {
-          const userWithPhoto = await orm.get(User, {
-            primaryKey: { id: user.id },
-            include: { photo: {} },
-          });
-
-          if (userWithPhoto?.photo) {
-            const arrayBuffer = await userWithPhoto.photo.arrayBuffer();
+        if (user.photo) {
+          try {
+            const arrayBuffer = await user.photo.arrayBuffer();
             const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
             photoDataUrl = `data:image/png;base64,${base64}`;
+          } catch {
+            photoDataUrl = null;
           }
-        } catch {
-          photoDataUrl = null;
         }
 
         const result = new SearchUserWithPhotoResponse();
@@ -433,6 +464,67 @@ export class UserAppService {
     );
 
     return HttpResult.ok(200, usersWithPhoto);
+  }
+
+  @Get()
+  async getUserProfileByIdWithPhoto(
+    targetUserId: string,
+  ): Promise<HttpResult<UserProfileByIdWithPhotoResponse>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (typeof targetUserId !== "string" || !targetUserId.trim()) {
+      return HttpResult.fail(400, "Target user id is required");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const user = await orm.get(User, {
+      primaryKey: { id: targetUserId },
+      include: { photo: {} },
+    });
+
+    if (!user) {
+      return HttpResult.fail(404, "User not found");
+    }
+
+    let friendshipStatus = "none";
+
+    if (userId === targetUserId) {
+      friendshipStatus = "self";
+    } else {
+      const friendship = await this.loadFriendshipBetween(userId, targetUserId);
+
+      if (friendship) {
+        if (friendship.status === "accepted") {
+          friendshipStatus = "accepted";
+        } else if (friendship.status === "blocked") {
+          friendshipStatus = "blocked";
+        } else if (friendship.status === "pending") {
+          friendshipStatus =
+            friendship.requesterId === userId ? "pending_outgoing" : "pending_incoming";
+        }
+      }
+    }
+
+    let photoDataUrl: string | null = null;
+
+    if (user.photo) {
+      try {
+        const arrayBuffer = await user.photo.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        photoDataUrl = `data:image/png;base64,${base64}`;
+      } catch {
+        // If photo processing fails, still return user without photo
+      }
+    }
+
+    const result = new UserProfileByIdWithPhotoResponse();
+    result.user = user;
+    result.photoDataUrl = photoDataUrl;
+    result.friendshipStatus = friendshipStatus;
+    return HttpResult.ok(200, result);
   }
 
   @Put()
@@ -805,6 +897,38 @@ export class PostAppService {
     return Math.max(1, Math.min(max, Math.floor(limit)));
   }
 
+  private async loadFriendshipBetween(
+    aUserId: string,
+    bUserId: string,
+  ): Promise<Friendship | null> {
+    const orm = Orm.fromEnv(this.env);
+    const friendshipsByPair: DataSource<Friendship> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT * FROM cte
+        WHERE (
+          requesterId = ?
+          AND addresseeId = ?
+        ) OR (
+          requesterId = ?
+          AND addresseeId = ?
+        )
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "LastSeen", "Offset", "LastSeen", "Limit"],
+    };
+
+    const matches = await orm.list(Friendship, {
+      include: friendshipsByPair,
+      offset: aUserId as unknown as number,
+      lastSeen: { id: bUserId } as Partial<Friendship>,
+      limit: 1,
+    });
+
+    return matches[0] ?? null;
+  }
   private async getUserId(): Promise<string | null> {
     const auth = getAuth();
     const session = await auth.api.getSession({
@@ -889,6 +1013,56 @@ export class PostAppService {
       include: postsByFollowersAndSelf,
       offset: userId as unknown as number,
       lastSeen: { id: userId },
+      limit: normalizedLimit,
+    });
+
+    return HttpResult.ok(200, posts);
+  }
+
+  @Get()
+  async listPostsForUserIfFriend(targetUserId: string, limit?: number): Promise<HttpResult<Post[]>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    if (typeof targetUserId !== "string" || !targetUserId.trim()) {
+      return HttpResult.fail(400, "Target user id is required");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+    const targetUser = await orm.get(User, {
+      primaryKey: { id: targetUserId },
+      include: {},
+    });
+
+    if (!targetUser) {
+      return HttpResult.fail(404, "User not found");
+    }
+
+    if (targetUserId !== userId) {
+      const friendship = await this.loadFriendshipBetween(userId, targetUserId);
+      if (!friendship || friendship.status !== "accepted") {
+        return HttpResult.fail(403, "Only friends can view this user's posts");
+      }
+    }
+
+    const normalizedLimit = this.normalizeLimit(limit, 25, 100);
+    const postsByOwner: DataSource<Post> = {
+      includeTree: {},
+      list: (joined) => `
+        WITH cte AS (${joined()})
+        SELECT * FROM cte
+        WHERE userId = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      listParams: ["Offset", "Limit"],
+    };
+
+    const posts = await orm.list(Post, {
+      include: postsByOwner,
+      offset: targetUserId as unknown as number,
       limit: normalizedLimit,
     });
 

@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { SearchUserWithPhotoResponse } from "@generated/client";
 import { RiUserLine } from "@remixicon/react";
+import Link from "vinext/shims/link";
 
 export const UserResultItem = memo(function UserResultItem({
   user,
@@ -10,7 +11,10 @@ export const UserResultItem = memo(function UserResultItem({
   user: SearchUserWithPhotoResponse;
 }) {
   return (
-    <div className="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-200 p-3 hover:bg-stone-50">
+    <Link
+      href={`/profile/${user.user.id}`}
+      className="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-200 p-3 hover:bg-stone-50"
+    >
       <div className="w-12 h-12 rounded-full bg-stone-300 flex items-center justify-center">
         {user.photoDataUrl ? (
           <img
@@ -28,6 +32,6 @@ export const UserResultItem = memo(function UserResultItem({
           {user.user.username ? `@${user.user.username}` : user.user.email}
         </p>
       </div>
-    </div>
+    </Link>
   );
 });
