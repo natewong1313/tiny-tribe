@@ -18,9 +18,10 @@ import { useRouter } from "vinext/shims/navigation";
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
 
 const onboardingSchema = z.object({
-  name: z.string().min(1, "Full name is required"),
+  name: z.string().trim().min(1, "Full name is required"),
   username: z
     .string()
+    .trim()
     .min(1, "Username is required")
     .refine((value) => !value.endsWith("_"), {
       message: "Username cannot end with underscore",
@@ -96,7 +97,10 @@ const FormPage = () => {
     },
 
     onSubmit: async ({ value, formApi }) => {
-      const usernameResult = await checkUsernameAvailability(value.username);
+      const trimmedUsername = value.username.trim();
+      const trimmedName = value.name.trim();
+
+      const usernameResult = await checkUsernameAvailability(trimmedUsername);
       if (!usernameResult.available) {
         formApi.fieldInfo.username.instance?.setErrorMap({
           onSubmit: usernameResult.error ?? "Username is already taken",
@@ -115,9 +119,9 @@ const FormPage = () => {
 
       const saveResult = await User.SAVE({
         id: userId,
-        name: value.name,
+        name: trimmedName,
         updated_at: new Date(),
-        username: value.username,
+        username: trimmedUsername,
       });
       if (!saveResult.ok) {
         formApi.fieldInfo.name.instance?.setErrorMap({
@@ -204,6 +208,7 @@ const FormPage = () => {
               }}
               onChange={(e) => {
                 const nextValue = e.target.value;
+                usernameCheckIdRef.current += 1;
                 setUsernameCheckState({ status: "idle", error: null });
                 field.handleChange(nextValue);
               }}
