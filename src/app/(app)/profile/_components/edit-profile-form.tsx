@@ -5,11 +5,11 @@ import { RiImageAddLine } from "@remixicon/react";
 import { UserAppService } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
 
-type EditProfileFormProps = {
+interface EditProfileFormProps {
   initialName: string;
   initialUsername: string;
   initialPhotoDataUrl: string | null;
-};
+}
 
 export default function EditProfileForm({
   initialName,

@@ -13,7 +13,14 @@
     "suspicious/no_unknown_at_rule": "off",
     "react/react-in-jsx-scope": "off",
     "react/jsx-uses-react": "off",
-    "sort-imports": "off"
+    "sort-imports": "off",
+    "no-ternary": "off",
+    "no-magic-numbers": "off",
+    "yoda": "off",
+    "sort-keys": "off",
+    "import/exports-last": "off",
+    "func-style": "off",
+    "no-nested-ternary": "off"
   },
 	"settings": {
 		"react": {

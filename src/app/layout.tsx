@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Mulish, Outfit, Work_Sans } from "next/font/google";
+import { Geist_Mono, Work_Sans } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/button";
-import { RiArrowRightFill, RiArrowRightLine, RiArrowRightLongFill } from "@remixicon/react";
+import { RiArrowRightLine } from "@remixicon/react";
 import { motion } from "motion/react";
 import { useRouter } from "vinext/shims/navigation";
 
@@ -9,7 +9,7 @@ const WelcomePage = () => {
   const router = useRouter();
   return (
     <>
-      <div className="flex-1 flex bg-cover bg-[url(/nature1.png)]"></div>
+      <div className="flex-1 flex bg-cover bg-[url(/nature1.png)]" />
       <motion.div
         className="flex flex-col p-8"
         initial="hidden"

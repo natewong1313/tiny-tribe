@@ -29,10 +29,10 @@ const onboardingSchema = z.object({
   photo: z.string().min(1, "Profile photo is required"),
 });
 
-type UsernameCheckState = {
+interface UsernameCheckState {
   status: "idle" | "checking" | "available" | "unavailable";
   error: string | null;
-};
+}
 
 const FormPage = () => {
   const router = useRouter();

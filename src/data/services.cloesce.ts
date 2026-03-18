@@ -809,7 +809,7 @@ export class PostAppService {
   }
 
   @Get()
-  async createPost(text_content: string, mediaCount: number = 0): Promise<HttpResult<Post>> {
+  async createPost(text_content: string, mediaCount = 0): Promise<HttpResult<Post>> {
     const userId = await this.getUserId();
     if (!userId) {
       return HttpResult.fail(401, "Unauthorized");

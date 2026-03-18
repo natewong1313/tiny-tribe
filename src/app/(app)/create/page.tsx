@@ -22,7 +22,7 @@ const createPostSchema = z.object({
 
 export default function CreatePage() {
   const formId = useId();
-  const { data: session } = useSession();
+  useSession();
   const router = useRouter();
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +60,9 @@ export default function CreatePage() {
         }
         return true;
       });
-      if (revokedUrl) URL.revokeObjectURL(revokedUrl);
+      if (revokedUrl) {
+        URL.revokeObjectURL(revokedUrl);
+      }
       return filtered;
     });
   }, []);
@@ -157,7 +159,9 @@ export default function CreatePage() {
                     src={item.previewUrl}
                     className="w-full h-full object-cover rounded-lg"
                     controls
-                  />
+                  >
+                    <track kind="captions" src="" label="No captions available" />
+                  </video>
                 ) : (
                   <img
                     src={item.previewUrl}
