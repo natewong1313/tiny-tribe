@@ -2,19 +2,16 @@
 
 import { useEffect, useId, useState } from "react";
 import { RiImageAddLine } from "@remixicon/react";
-import { User, UserAppService } from "@generated/client";
+import { UserAppService } from "@generated/client";
 import { useRouter } from "vinext/shims/navigation";
-import { validateUsername } from "@/lib/username";
 
 type EditProfileFormProps = {
-  userId: string;
   initialName: string;
   initialUsername: string;
   initialPhotoDataUrl: string | null;
 };
 
 export default function EditProfileForm({
-  userId,
   initialName,
   initialUsername,
   initialPhotoDataUrl,
@@ -61,58 +58,19 @@ export default function EditProfileForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const trimmedName = name.trim();
-    const trimmedUsername = username.trim();
-
-    if (!trimmedName) {
-      setError("Name is required");
-      return;
-    }
-
-    const usernameValidation = validateUsername(trimmedUsername);
-    if (!usernameValidation.valid) {
-      setError(usernameValidation.error || "Invalid username");
-      return;
-    }
-
     setIsSaving(true);
     setError(null);
 
     try {
-      if (trimmedUsername !== initialUsername) {
-        const availabilityResult = await UserAppService.isUsernameAvailable(trimmedUsername, fetch);
-        if (!availabilityResult.ok) {
-          setError(availabilityResult.message || "Failed to validate username");
-          return;
-        }
+      const photoBytes = selectedPhoto
+        ? new Uint8Array(await selectedPhoto.arrayBuffer())
+        : new Uint8Array();
 
-        if (!availabilityResult.data) {
-          setError("Username is already taken");
-          return;
-        }
-      }
+      const result = await UserAppService.updateProfile(name, username, photoBytes, fetch);
 
-      const saveResult = await User.SAVE({
-        id: userId,
-        name: trimmedName,
-        username: trimmedUsername,
-        updated_at: new Date(),
-      });
-
-      if (!saveResult.ok) {
-        setError(saveResult.message || "Failed to save profile");
+      if (!result.ok) {
+        setError(result.message || "Failed to update profile");
         return;
-      }
-
-      if (selectedPhoto) {
-        const user = new User();
-        user.id = userId;
-        const photoBytes = new Uint8Array(await selectedPhoto.arrayBuffer());
-        const uploadResult = await user.uploadPhoto(photoBytes, fetch);
-        if (!uploadResult.ok) {
-          setError(uploadResult.message || "Failed to upload profile photo");
-          return;
-        }
       }
 
       setIsOpen(false);

@@ -48,7 +48,6 @@ export default async function ProfilePage() {
 
         <div className="mt-5 border-t border-stone-200 pt-4">
           <EditProfileForm
-            userId={user.id}
             initialName={user.name || ""}
             initialUsername={user.username || ""}
             initialPhotoDataUrl={photoDataUrl}

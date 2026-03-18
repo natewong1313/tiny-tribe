@@ -1,4 +1,5 @@
 import { DataSource, Get, HttpResult, Orm, Put, Service } from "cloesce/backend";
+import { ReadableStream } from "@cloudflare/workers-types";
 import { Friendship, Post, PostMedia, User } from "./models.cloesce";
 import { Env } from "./main.cloesce";
 import { validateUsername } from "../lib/username";
@@ -124,6 +125,100 @@ export class UserAppService {
     });
 
     return HttpResult.ok(200, existingUsers.length === 0);
+  }
+
+  @Put()
+  async updateProfile(
+    name: string,
+    username: string,
+    photoBytes?: Uint8Array,
+  ): Promise<HttpResult<User>> {
+    const userId = await this.getUserId();
+    if (!userId) {
+      return HttpResult.fail(401, "Unauthorized");
+    }
+
+    const trimmedName = typeof name === "string" ? name.trim() : "";
+    const trimmedUsername = typeof username === "string" ? username.trim() : "";
+
+    if (!trimmedName) {
+      return HttpResult.fail(400, "Name is required");
+    }
+
+    const usernameValidation = validateUsername(trimmedUsername);
+    if (!usernameValidation.valid) {
+      return HttpResult.fail(400, usernameValidation.error ?? "Invalid username");
+    }
+
+    const orm = Orm.fromEnv(this.env);
+
+    const existingUser = await orm.get(User, {
+      primaryKey: { id: userId },
+      include: { photo: {} },
+    });
+
+    if (!existingUser) {
+      return HttpResult.fail(404, "User not found");
+    }
+
+    if (trimmedUsername !== existingUser.username) {
+      const usernameLookupSource: DataSource<User> = {
+        includeTree: {},
+        list: (joined) => `
+          WITH cte AS (${joined()})
+          SELECT * FROM cte
+          WHERE username = ?
+            AND id != ?
+          LIMIT ?
+        `,
+        listParams: ["Offset", "LastSeen", "Limit"],
+      };
+      const existingUsers = await orm.list(User, {
+        include: usernameLookupSource,
+        lastSeen: { id: userId },
+        limit: 1,
+        offset: trimmedUsername as unknown as number,
+      });
+
+      if (existingUsers.length > 0) {
+        return HttpResult.fail(409, "Username is already taken");
+      }
+    }
+
+    const now = new Date().toISOString();
+    const updated = await orm.upsert(
+      User,
+      {
+        id: userId,
+        name: trimmedName,
+        username: trimmedUsername,
+        created_at: existingUser.created_at,
+        updated_at: now,
+      },
+      {},
+    );
+
+    if (!updated) {
+      return HttpResult.fail(500, "Failed to update profile");
+    }
+
+    if (photoBytes && photoBytes.length > 0) {
+      const user = new User();
+      user.id = userId;
+      try {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(photoBytes);
+            controller.close();
+          },
+        });
+        await user.uploadPhoto(this.env, stream);
+      } catch {
+        return HttpResult.fail(500, "Profile saved but failed to upload photo");
+      }
+    }
+
+    return HttpResult.ok(200, updated);
   }
 
   @Get()
